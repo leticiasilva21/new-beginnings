@@ -1,10 +1,8 @@
 import type { Listing, Season } from "../types"
 
-const BASE_URL = "https://rbm.stays.com.br/external/v1"
-const AUTH = "Basic " + btoa("36f8bda9:59e627b3")
+const BASE_URL = "https://ucavfotyciwnqwurzjny.supabase.co/functions/v1/stays-proxy"
 
 const headers = {
-  Authorization: AUTH,
   "Content-Type": "application/json",
 }
 
