@@ -1,7 +1,6 @@
 import { useState } from "react"
-import { ChevronDown, ChevronUp, ArrowUpDown } from "lucide-react"
-import { cn } from "../lib/utils"
-import { fmtBRL, fmtPct } from "../lib/utils"
+import { ChevronDown, ChevronUp, ArrowUpDown, MapPin } from "lucide-react"
+import { cn, fmtBRL, fmtPct } from "../lib/utils"
 import type { PriceJump } from "../types"
 
 interface Props {
@@ -16,7 +15,13 @@ export function ResultsTable({ results, threshold }: Props) {
   const [sort, setSort]       = useState<SortKey>("pct")
   const [dir, setDir]         = useState<SortDir>("desc")
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
-  const [filter, setFilter]   = useState<"all" | "alert" | "drop" | "stable">("all")
+  const [statusFilter, setStatusFilter] = useState<"all" | "alert" | "drop" | "stable">("all")
+  const [regionFilter, setRegionFilter] = useState<string>("all")
+
+  // Build sorted region list from results
+  const regions = Array.from(
+    new Map(results.map((r) => [r.regionId, r.regionName])).entries()
+  ).sort((a, b) => a[1].localeCompare(b[1]))
 
   function toggleSort(key: SortKey) {
     if (sort === key) setDir((d) => (d === "asc" ? "desc" : "asc"))
@@ -32,15 +37,16 @@ export function ResultsTable({ results, threshold }: Props) {
   }
 
   const filtered = results.filter((r) => {
-    if (filter === "alert")  return r.diffPercent !== null && r.diffPercent > threshold
-    if (filter === "drop")   return r.diffPercent !== null && r.diffPercent < -threshold
-    if (filter === "stable") return r.diffPercent !== null && Math.abs(r.diffPercent) <= threshold
+    if (regionFilter !== "all" && r.regionId !== regionFilter) return false
+    if (statusFilter === "alert")  return r.diffPercent !== null && r.diffPercent > threshold
+    if (statusFilter === "drop")   return r.diffPercent !== null && r.diffPercent < -threshold
+    if (statusFilter === "stable") return r.diffPercent !== null && Math.abs(r.diffPercent) <= threshold
     return true
   })
 
   const sorted = [...filtered].sort((a, b) => {
     let va: any, vb: any
-    if (sort === "name")    { va = a.listing.id;       vb = b.listing.id }
+    if (sort === "name")    { va = a.listing.internalName || a.listing.id; vb = b.listing.internalName || b.listing.id }
     if (sort === "base")    { va = a.baseAvg ?? -Infinity; vb = b.baseAvg ?? -Infinity }
     if (sort === "compare") { va = a.compareAvg ?? -Infinity; vb = b.compareAvg ?? -Infinity }
     if (sort === "diff")    { va = a.diffValue ?? -Infinity; vb = b.diffValue ?? -Infinity }
@@ -71,22 +77,89 @@ export function ResultsTable({ results, threshold }: Props) {
     >
       <span className="flex items-center gap-1">
         {label}
-        <ArrowUpDown className="w-3 h-3" />
+        {sort === k
+          ? dir === "asc"
+            ? <ChevronUp className="w-3 h-3 text-orange-500" />
+            : <ChevronDown className="w-3 h-3 text-orange-500" />
+          : <ArrowUpDown className="w-3 h-3" />}
       </span>
     </th>
   )
 
+  const selectedRegionName = regionFilter === "all"
+    ? null
+    : regions.find(([id]) => id === regionFilter)?.[1]
+
+  const colSpan = regionFilter === "all" ? 8 : 7
+
   return (
     <div className="space-y-3">
-      {/* Filter tabs */}
-      <div className="flex gap-2">
+      {/* Region filter */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <MapPin className="w-4 h-4 text-orange-500" />
+          <span className="text-sm font-semibold text-gray-700">Filtrar por Região Tarifária</span>
+          {regionFilter !== "all" && (
+            <button
+              onClick={() => setRegionFilter("all")}
+              className="ml-auto text-xs text-gray-400 hover:text-gray-600 underline"
+            >
+              limpar filtro
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setRegionFilter("all")}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+              regionFilter === "all"
+                ? "bg-orange-500 text-white border-orange-500"
+                : "bg-white text-gray-600 border-gray-200 hover:border-orange-300 hover:text-orange-600"
+            )}
+          >
+            Todas as regiões
+            <span className="ml-1.5 opacity-70">({results.length})</span>
+          </button>
+          {regions.map(([id, name]) => {
+            const count = results.filter((r) => r.regionId === id).length
+            const alertCount = results.filter(
+              (r) => r.regionId === id && r.diffPercent !== null && Math.abs(r.diffPercent) > threshold
+            ).length
+            return (
+              <button
+                key={id}
+                onClick={() => setRegionFilter(id)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5",
+                  regionFilter === id
+                    ? "bg-orange-500 text-white border-orange-500"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-orange-300 hover:text-orange-600"
+                )}
+              >
+                {name}
+                <span className="opacity-70">({count})</span>
+                {alertCount > 0 && regionFilter !== id && (
+                  <span className="bg-red-100 text-red-600 text-[10px] px-1 rounded-full font-semibold">
+                    {alertCount}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Status filter + count */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
         {(["all", "alert", "drop", "stable"] as const).map((f) => (
           <button
             key={f}
-            onClick={() => setFilter(f)}
+            onClick={() => setStatusFilter(f)}
             className={cn(
               "px-3 py-1 rounded-full text-xs font-medium transition-colors",
-              filter === f
+              statusFilter === f
                 ? "bg-orange-500 text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             )}
@@ -94,6 +167,11 @@ export function ResultsTable({ results, threshold }: Props) {
             {{ all: "Todos", alert: "🚨 Alertas", drop: "📉 Quedas", stable: "✅ Estáveis" }[f]}
           </button>
         ))}
+        </div>
+        <span className="text-xs text-gray-400">
+          {sorted.length} imóvel{sorted.length !== 1 ? "is" : ""}
+          {selectedRegionName ? ` · ${selectedRegionName}` : ""}
+        </span>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
@@ -103,6 +181,9 @@ export function ResultsTable({ results, threshold }: Props) {
               <tr>
                 <th className="w-8 px-3 py-3" />
                 <Th k="name" label="Imóvel" />
+                {regionFilter === "all" && (
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Região</th>
+                )}
                 <Th k="base" label="Diária Base" />
                 <Th k="compare" label="Diária Comparação" />
                 <Th k="diff" label="Variação R$" />
@@ -125,9 +206,16 @@ export function ResultsTable({ results, threshold }: Props) {
                         {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="font-semibold text-gray-800">{r.listing.id}</div>
-                        <div className="text-xs text-gray-400 truncate max-w-[180px]">{r.listing.region}</div>
+                        <div className="font-semibold text-gray-800">{r.listing.internalName || r.listing.id}</div>
+                        <div className="font-mono text-xs text-gray-400">{r.listing.id}</div>
                       </td>
+                      {regionFilter === "all" && (
+                        <td className="px-4 py-3">
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+                            {r.regionName}
+                          </span>
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-gray-700">{fmtBRL(r.baseAvg)}</td>
                       <td className="px-4 py-3 text-gray-700">{fmtBRL(r.compareAvg)}</td>
                       <td className={cn("px-4 py-3", diffClass(pct))}>
@@ -151,7 +239,7 @@ export function ResultsTable({ results, threshold }: Props) {
 
                     {isOpen && (
                       <tr key={`${r.listing.id}-detail`} className="bg-gray-50">
-                        <td colSpan={7} className="px-6 py-4">
+                        <td colSpan={colSpan} className="px-6 py-4">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                             <SeasonDetail title="Período Base" season={r.baseSeason} />
                             <SeasonDetail title="Período Comparação" season={r.compareSeason} />
@@ -164,7 +252,7 @@ export function ResultsTable({ results, threshold }: Props) {
               })}
               {sorted.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400 text-sm">
+                  <td colSpan={colSpan} className="px-4 py-8 text-center text-gray-400 text-sm">
                     Nenhum resultado para este filtro.
                   </td>
                 </tr>
