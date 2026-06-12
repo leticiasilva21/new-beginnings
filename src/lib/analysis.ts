@@ -15,33 +15,48 @@ export function getDominantSeason(
 ): Season | null {
   if (!seasons.length) return null
 
-  const rangeStart = new Date(from).getTime()
-  const rangeEnd   = new Date(to).getTime()
+  const rangeEnd = new Date(to).getTime()
 
   const active = seasons.filter((s) => s.status === "active")
 
-  // Score each season by how many days it overlaps with the requested range
-  const scored = active
+  // Filter out very short events (< 10 days) unless they're the only ones
+  const baseSeasonsOnly = active.filter((s) => {
+    const duration = (new Date(s.to).getTime() - new Date(s.from).getTime()) / 86_400_000
+    return duration >= 10
+  })
+  const pool = baseSeasonsOnly.length ? baseSeasonsOnly : active
+
+  // Find the season that is active on the LAST day of the period.
+  // This ensures: if the period ends in July, we pick the July season — not June.
+  const atEnd = pool.filter((s) => {
+    const sStart = new Date(s.from).getTime()
+    const sEnd   = new Date(s.to).getTime()
+    return sStart <= rangeEnd && sEnd >= rangeEnd
+  })
+
+  if (atEnd.length) {
+    // If multiple seasons cover the end date, pick the shortest (most specific)
+    atEnd.sort((a, b) => {
+      const da = new Date(a.to).getTime() - new Date(a.from).getTime()
+      const db = new Date(b.to).getTime() - new Date(b.from).getTime()
+      return da - db
+    })
+    return atEnd[0]
+  }
+
+  // Fallback: season with most overlap in the range
+  const rangeStart = new Date(from).getTime()
+  const scored = pool
     .map((s) => {
-      const sStart  = new Date(s.from).getTime()
-      const sEnd    = new Date(s.to).getTime()
-      const overlap =
-        Math.max(0, Math.min(sEnd, rangeEnd) - Math.max(sStart, rangeStart)) /
-        86_400_000
-      const duration = (sEnd - sStart) / 86_400_000
-      return { season: s, overlap, duration }
+      const sStart = new Date(s.from).getTime()
+      const sEnd   = new Date(s.to).getTime()
+      const overlap = Math.max(0, Math.min(sEnd, rangeEnd) - Math.max(sStart, rangeStart)) / 86_400_000
+      return { season: s, overlap }
     })
     .filter((x) => x.overlap > 0)
+    .sort((a, b) => b.overlap - a.overlap)
 
-  if (!scored.length) return null
-
-  // Prefer seasons that aren't very short events (< 10 days) if others exist
-  const baseOnly = scored.filter((x) => x.duration >= 10)
-  const pool = baseOnly.length ? baseOnly : scored
-
-  // Pick the one with the most overlap days
-  pool.sort((a, b) => b.overlap - a.overlap)
-  return pool[0].season
+  return scored.length ? scored[0].season : null
 }
 
 /**
