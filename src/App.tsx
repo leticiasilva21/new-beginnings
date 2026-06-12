@@ -2,16 +2,14 @@ import { useState } from "react"
 import { Search, RefreshCw } from "lucide-react"
 import { useListings }  from "./hooks/useListings"
 import { useAnalysis }  from "./hooks/useAnalysis"
-import { DateRangePicker }    from "./components/DateRangePicker"
+import { DatePicker }         from "./components/DatePicker"
 import { ListingMultiSelect } from "./components/ListingMultiSelect"
 import { SummaryCards }       from "./components/SummaryCards"
 import { ResultsTable }       from "./components/ResultsTable"
 import { isoDate } from "./lib/utils"
 
 const today     = isoDate(new Date())
-const lastMonth = isoDate(new Date(Date.now() - 30 * 86_400_000))
 const nextMonth = isoDate(new Date(Date.now() + 30 * 86_400_000))
-const twoMonths = isoDate(new Date(Date.now() + 60 * 86_400_000))
 
 const THRESHOLD = 30
 
@@ -20,17 +18,15 @@ export default function App() {
   const { run, results, loading: running, progress, error: analysisError } = useAnalysis()
 
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [baseFrom, setBaseFrom] = useState(lastMonth)
-  const [baseTo,   setBaseTo]   = useState(today)
-  const [cmpFrom,  setCmpFrom]  = useState(nextMonth)
-  const [cmpTo,    setCmpTo]    = useState(twoMonths)
+  const [baseDate, setBaseDate] = useState(today)
+  const [cmpDate,  setCmpDate]  = useState(nextMonth)
 
   const targetListings =
     selectedIds.length === 0 ? listings : listings.filter((l) => selectedIds.includes(l.id))
 
   function handleAnalyze() {
-    if (!baseFrom || !baseTo || !cmpFrom || !cmpTo) return
-    run(targetListings, baseFrom, baseTo, cmpFrom, cmpTo)
+    if (!baseDate || !cmpDate) return
+    run(targetListings, baseDate, cmpDate)
   }
 
   return (
@@ -74,18 +70,16 @@ export default function App() {
               </div>
             )}
 
-            <DateRangePicker
-              label="Período Base"
-              from={baseFrom}
-              to={baseTo}
-              onChange={(f, t) => { setBaseFrom(f); setBaseTo(t) }}
+            <DatePicker
+              label="Data Base"
+              value={baseDate}
+              onChange={setBaseDate}
             />
 
-            <DateRangePicker
-              label="Período de Comparação"
-              from={cmpFrom}
-              to={cmpTo}
-              onChange={(f, t) => { setCmpFrom(f); setCmpTo(t) }}
+            <DatePicker
+              label="Data de Comparação"
+              value={cmpDate}
+              onChange={setCmpDate}
             />
 
             <button

@@ -1,7 +1,14 @@
 import { useState, useCallback } from "react"
 import { fetchRates } from "../lib/stays"
 import { getDominantSeason } from "../lib/analysis"
+import { isoDate } from "../lib/utils"
 import type { Listing, PriceJump } from "../types"
+
+function addDays(date: string, days: number): string {
+  const d = new Date(date)
+  d.setDate(d.getDate() + days)
+  return isoDate(d)
+}
 
 export function useAnalysis() {
   const [results, setResults]   = useState<PriceJump[]>([])
@@ -12,10 +19,8 @@ export function useAnalysis() {
   const run = useCallback(
     async (
       listings: Listing[],
-      baseFrom: string,
-      baseTo: string,
-      cmpFrom: string,
-      cmpTo: string
+      baseDate: string,
+      cmpDate: string
     ) => {
       setLoading(true)
       setError(null)
@@ -27,14 +32,14 @@ export function useAnalysis() {
       for (let i = 0; i < listings.length; i++) {
         const listing = listings[i]
         try {
-          // Fetch a wide window covering both periods at once
-          const minFrom = baseFrom < cmpFrom ? baseFrom : cmpFrom
-          const maxTo   = baseTo > cmpTo ? baseTo : cmpTo
+          // Fetch a wide window covering both dates (90-day buffer around each)
+          const minFrom = baseDate < cmpDate ? baseDate : cmpDate
+          const maxTo   = addDays(baseDate > cmpDate ? baseDate : cmpDate, 90)
 
           const seasons = await fetchRates(listing.id, minFrom, maxTo)
 
-          const baseSeason    = getDominantSeason(seasons, baseFrom, baseTo)
-          const compareSeason = getDominantSeason(seasons, cmpFrom, cmpTo)
+          const baseSeason    = getDominantSeason(seasons, baseDate, baseDate)
+          const compareSeason = getDominantSeason(seasons, cmpDate, cmpDate)
 
           const baseAvg    = baseSeason?.baseRateValue ?? null
           const compareAvg = compareSeason?.baseRateValue ?? null
