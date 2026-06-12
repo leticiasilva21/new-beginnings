@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { fetchListings, fetchListingSellPrice } from "../lib/stays"
 import type { Listing } from "../types"
 
@@ -13,11 +13,39 @@ export interface RegionGroup {
   listings: ListingWithRegion[]
 }
 
+const CACHE_KEY = "nb_region_groups_v2"
+const CACHE_TTL = 6 * 60 * 60 * 1000 // 6 hours
+
+function readCache(): RegionGroup[] | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY)
+    if (!raw) return null
+    const { ts, data } = JSON.parse(raw)
+    if (Date.now() - ts > CACHE_TTL) return null
+    return data as RegionGroup[]
+  } catch {
+    return null
+  }
+}
+
+function writeCache(groups: RegionGroup[]) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: groups }))
+  } catch {}
+}
+
 export function useListingsWithRegion() {
-  const [groups, setGroups]     = useState<RegionGroup[]>([])
+  const cached = readCache()
+  const [groups, setGroups]     = useState<RegionGroup[]>(cached ?? [])
   const [loading, setLoading]   = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError]       = useState<string | null>(null)
+
+  // Auto-load on mount if not cached
+  useEffect(() => {
+    if (cached) return   // fresh cache → skip
+    load()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     setLoading(true)
@@ -26,7 +54,6 @@ export function useListingsWithRegion() {
 
     try {
       const listings = await fetchListings()
-      const withRegion: ListingWithRegion[] = []
       const regionMap: Record<string, RegionGroup> = {}
 
       for (let i = 0; i < listings.length; i++) {
@@ -36,7 +63,6 @@ export function useListingsWithRegion() {
         const regionName = region?.regionName ?? "Sem região tarifária"
 
         const item: ListingWithRegion = { ...l, regionId, regionName }
-        withRegion.push(item)
 
         if (!regionMap[regionId]) {
           regionMap[regionId] = { regionId, regionName, listings: [] }
@@ -50,6 +76,7 @@ export function useListingsWithRegion() {
         a.regionName.localeCompare(b.regionName)
       )
       setGroups(sorted)
+      writeCache(sorted)
     } catch (e: any) {
       setError(e.message)
     } finally {
