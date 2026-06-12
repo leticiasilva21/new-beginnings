@@ -1,11 +1,12 @@
 import { useState } from "react"
 import { Search, RefreshCw, Building2, BarChart2 } from "lucide-react"
-import { useListings }  from "./hooks/useListings"
-import { useAnalysis }  from "./hooks/useAnalysis"
-import { DatePicker }         from "./components/DatePicker"
-import { ListingMultiSelect } from "./components/ListingMultiSelect"
-import { SummaryCards }       from "./components/SummaryCards"
-import { ResultsTable }       from "./components/ResultsTable"
+import { useListings }           from "./hooks/useListings"
+import { useListingsWithRegion } from "./hooks/useListingsWithRegion"
+import { useAnalysis }           from "./hooks/useAnalysis"
+import { DatePicker }      from "./components/DatePicker"
+import { RegionSelect }    from "./components/RegionSelect"
+import { SummaryCards }    from "./components/SummaryCards"
+import { ResultsTable }    from "./components/ResultsTable"
 import { ListingsView }    from "./components/ListingsView"
 import { CorrectionPanel } from "./components/CorrectionPanel"
 import { isoDate, cn } from "./lib/utils"
@@ -19,18 +20,22 @@ const THRESHOLD = 30
 
 export default function App() {
   const { listings, loading: loadingListings, error: listingError } = useListings()
+  const { groups, loading: loadingRegions, progress: regionProgress, error: regionError, load: loadRegions } = useListingsWithRegion()
   const { run, results, loading: running, progress, error: analysisError } = useAnalysis()
 
-  const [tab, setTab] = useState<Tab>("analysis")
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [baseDate, setBaseDate] = useState(today)
-  const [cmpDate,  setCmpDate]  = useState(nextMonth)
+  const [tab, setTab]               = useState<Tab>("analysis")
+  const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null)
+  const [baseDate, setBaseDate]     = useState(today)
+  const [cmpDate,  setCmpDate]      = useState(nextMonth)
 
-  const targetListings =
-    selectedIds.length === 0 ? listings : listings.filter((l) => selectedIds.includes(l.id))
+  // Listings to analyze: those belonging to the selected region
+  const selectedGroup = groups.find((g) => g.regionId === selectedRegionId) ?? null
+  const targetListings = selectedGroup
+    ? listings.filter((l) => selectedGroup.listings.some((sl) => sl.id === l.id))
+    : []
 
   function handleAnalyze() {
-    if (!baseDate || !cmpDate) return
+    if (!baseDate || !cmpDate || targetListings.length === 0) return
     run(targetListings, baseDate, cmpDate)
   }
 
@@ -73,31 +78,34 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-6 space-y-6">
-        {tab === "listings" && <ListingsView />}
+        {tab === "listings" && (
+          <ListingsView
+            groups={groups}
+            loading={loadingRegions}
+            progress={regionProgress}
+            error={regionError}
+            onLoad={loadRegions}
+          />
+        )}
         {tab === "analysis" && <>
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-gray-700 mb-4">Configurar Análise</h2>
 
-          {listingError && (
+          {(listingError || regionError) && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-              Erro ao carregar imóveis: {listingError}
+              {listingError ?? regionError}
             </div>
           )}
 
           <div className="flex flex-wrap items-end gap-4">
-            {loadingListings ? (
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <RefreshCw className="w-4 h-4 animate-spin" /> Carregando imóveis...
-              </div>
-            ) : (
-              <div className="relative">
-                <ListingMultiSelect
-                  listings={listings}
-                  selected={selectedIds}
-                  onChange={setSelectedIds}
-                />
-              </div>
-            )}
+            <RegionSelect
+              groups={groups}
+              loading={loadingRegions}
+              progress={regionProgress}
+              selectedRegionId={selectedRegionId}
+              onSelect={setSelectedRegionId}
+              onLoad={loadRegions}
+            />
 
             <DatePicker
               label="Data Base"
@@ -113,7 +121,7 @@ export default function App() {
 
             <button
               onClick={handleAnalyze}
-              disabled={running || loadingListings || targetListings.length === 0}
+              disabled={running || loadingListings || loadingRegions || targetListings.length === 0}
               className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg shadow-sm transition-colors"
             >
               {running ? (
@@ -154,11 +162,13 @@ export default function App() {
           </>
         )}
 
-        {results.length === 0 && !running && !loadingListings && (
+        {results.length === 0 && !running && (
           <div className="text-center py-16 text-gray-400">
             <Search className="w-10 h-10 mx-auto mb-3 opacity-40" />
             <p className="text-sm">
-              Configure os filtros e clique em <strong>Analisar</strong> para ver os resultados.
+              {!selectedRegionId
+                ? <>Selecione uma <strong>Região Tarifária</strong> e clique em <strong>Analisar</strong>.</>
+                : <>Clique em <strong>Analisar</strong> para ver os resultados.</>}
             </p>
           </div>
         )}

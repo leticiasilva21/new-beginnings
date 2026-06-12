@@ -1,9 +1,16 @@
 import { useState } from "react"
 import { ChevronDown, ChevronRight, Building2, MapPin } from "lucide-react"
-import { useListingsWithRegion } from "../hooks/useListingsWithRegion"
+import type { RegionGroup } from "../hooks/useListingsWithRegion"
 
-export function ListingsView() {
-  const { groups, loading, progress, error, load } = useListingsWithRegion()
+interface Props {
+  groups: RegionGroup[]
+  loading: boolean
+  progress: number
+  error: string | null
+  onLoad: () => void
+}
+
+export function ListingsView({ groups, loading, progress, error, onLoad }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [search, setSearch]     = useState("")
 
@@ -54,7 +61,7 @@ export function ListingsView() {
 
           {groups.length === 0 && !loading && (
             <button
-              onClick={load}
+              onClick={onLoad}
               className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
             >
               <Building2 className="w-4 h-4" />
