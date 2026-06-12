@@ -1,12 +1,16 @@
 import { useState } from "react"
-import { Search, RefreshCw } from "lucide-react"
+import { Search, RefreshCw, Building2, BarChart2 } from "lucide-react"
 import { useListings }  from "./hooks/useListings"
 import { useAnalysis }  from "./hooks/useAnalysis"
 import { DatePicker }         from "./components/DatePicker"
 import { ListingMultiSelect } from "./components/ListingMultiSelect"
 import { SummaryCards }       from "./components/SummaryCards"
 import { ResultsTable }       from "./components/ResultsTable"
-import { isoDate } from "./lib/utils"
+import { ListingsView }    from "./components/ListingsView"
+import { CorrectionPanel } from "./components/CorrectionPanel"
+import { isoDate, cn } from "./lib/utils"
+
+type Tab = "analysis" | "listings"
 
 const today     = isoDate(new Date())
 const nextMonth = isoDate(new Date(Date.now() + 30 * 86_400_000))
@@ -17,6 +21,7 @@ export default function App() {
   const { listings, loading: loadingListings, error: listingError } = useListings()
   const { run, results, loading: running, progress, error: analysisError } = useAnalysis()
 
+  const [tab, setTab] = useState<Tab>("analysis")
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [baseDate, setBaseDate] = useState(today)
   const [cmpDate,  setCmpDate]  = useState(nextMonth)
@@ -34,8 +39,8 @@ export default function App() {
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Análise de Salto de Preços</h1>
-            <p className="text-sm text-gray-500">Comparação de diárias entre períodos — Carpediem</p>
+            <h1 className="text-xl font-bold text-gray-900">New Beginnings · Revenue</h1>
+            <p className="text-sm text-gray-500">Ferramentas de precificação — Carpediem</p>
           </div>
           {!loadingListings && (
             <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
@@ -43,9 +48,33 @@ export default function App() {
             </span>
           )}
         </div>
+
+        {/* Tabs */}
+        <div className="max-w-7xl mx-auto mt-3 flex gap-1">
+          {([
+            { key: "analysis", label: "Análise de Saltos",  Icon: BarChart2  },
+            { key: "listings", label: "Imóveis por Região", Icon: Building2  },
+          ] as const).map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                tab === key
+                  ? "bg-orange-500 text-white"
+                  : "text-gray-500 hover:bg-gray-100"
+              )}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          ))}
+        </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+        {tab === "listings" && <ListingsView />}
+        {tab === "analysis" && <>
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-gray-700 mb-4">Configurar Análise</h2>
 
@@ -121,6 +150,7 @@ export default function App() {
           <>
             <SummaryCards results={results} threshold={THRESHOLD} />
             <ResultsTable results={results} threshold={THRESHOLD} />
+            <CorrectionPanel results={results} />
           </>
         )}
 
@@ -132,6 +162,7 @@ export default function App() {
             </p>
           </div>
         )}
+        </>}
       </main>
     </div>
   )

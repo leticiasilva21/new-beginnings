@@ -26,6 +26,8 @@ export interface Listing {
 
 export interface PriceJump {
   listing: Listing
+  regionId: string
+  regionName: string
   baseSeason: Season | null
   compareSeason: Season | null
   baseAvg: number | null

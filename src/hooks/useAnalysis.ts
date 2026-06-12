@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react"
-import { fetchRates } from "../lib/stays"
+import { fetchRates, fetchListingSellPrice } from "../lib/stays"
 import { getDominantSeason } from "../lib/analysis"
 import { isoDate } from "../lib/utils"
 import type { Listing, PriceJump } from "../types"
@@ -17,11 +17,7 @@ export function useAnalysis() {
   const [error, setError]       = useState<string | null>(null)
 
   const run = useCallback(
-    async (
-      listings: Listing[],
-      baseDate: string,
-      cmpDate: string
-    ) => {
+    async (listings: Listing[], baseDate: string, cmpDate: string) => {
       setLoading(true)
       setError(null)
       setResults([])
@@ -32,11 +28,17 @@ export function useAnalysis() {
       for (let i = 0; i < listings.length; i++) {
         const listing = listings[i]
         try {
-          // Fetch a wide window covering both dates (90-day buffer around each)
           const minFrom = baseDate < cmpDate ? baseDate : cmpDate
           const maxTo   = addDays(baseDate > cmpDate ? baseDate : cmpDate, 90)
 
-          const seasons = await fetchRates(listing.id, minFrom, maxTo)
+          // Fetch rates and region in parallel
+          const [seasons, regionInfo] = await Promise.all([
+            fetchRates(listing.id, minFrom, maxTo),
+            fetchListingSellPrice(listing.id),
+          ])
+
+          const regionId   = regionInfo?.regionId   ?? "sem-regiao"
+          const regionName = regionInfo?.regionName ?? "Sem região tarifária"
 
           const baseSeason    = getDominantSeason(seasons, baseDate, baseDate)
           const compareSeason = getDominantSeason(seasons, cmpDate, cmpDate)
@@ -51,10 +53,12 @@ export function useAnalysis() {
             diffPercent = ((compareAvg - baseAvg) / baseAvg) * 100
           }
 
-          out.push({ listing, baseSeason, compareSeason, baseAvg, compareAvg, diffValue, diffPercent })
+          out.push({ listing, regionId, regionName, baseSeason, compareSeason, baseAvg, compareAvg, diffValue, diffPercent })
         } catch {
           out.push({
             listing,
+            regionId: "sem-regiao",
+            regionName: "Sem região tarifária",
             baseSeason: null,
             compareSeason: null,
             baseAvg: null,

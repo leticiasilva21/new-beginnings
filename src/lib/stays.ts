@@ -52,3 +52,34 @@ export async function fetchRates(
   const data = await res.json()
   return Array.isArray(data) ? data : []
 }
+
+export async function fetchListingSellPrice(listingId: string): Promise<{ regionId: string; regionName: string } | null> {
+  const res = await fetch(`${BASE_URL}/settings/listing/${listingId}/sellprice`, { headers })
+  if (!res.ok) return null
+  const data = await res.json()
+  const region = data?.region
+  if (!region?._id) return null
+  return {
+    regionId: region._id,
+    regionName: region._t_meta?.internalName ?? region._id,
+  }
+}
+
+export async function fetchPriceRegions(): Promise<{ _id: string; name: string }[]> {
+  const res = await fetch(`${BASE_URL}/parr/price-regions`, { headers })
+  if (!res.ok) return []
+  const data = await res.json()
+  return Array.isArray(data) ? data : []
+}
+
+export async function updateSeasonRate(
+  seasonId: string,
+  baseRateValue: number
+): Promise<boolean> {
+  const res = await fetch(`${BASE_URL}/parr/listing-rates-sell/${seasonId}`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify({ baseRateValue }),
+  })
+  return res.ok
+}
