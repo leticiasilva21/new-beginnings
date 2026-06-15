@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react"
-import { RefreshCw, Building2, BarChart2, ChevronDown } from "lucide-react"
+import { RefreshCw, Building2, BarChart2, ChevronDown, Tag } from "lucide-react"
 import { useListings }           from "./hooks/useListings"
 import { useListingsWithRegion } from "./hooks/useListingsWithRegion"
 import { useAnalysis }           from "./hooks/useAnalysis"
+import { usePricingTemplates }   from "./hooks/usePricingTemplates"
 import { DatePicker }      from "./components/DatePicker"
 import { SummaryCards }    from "./components/SummaryCards"
 import { ResultsTable }    from "./components/ResultsTable"
 import { ListingsView }    from "./components/ListingsView"
 import { CorrectionPanel } from "./components/CorrectionPanel"
+import { TemplateEditor }  from "./components/TemplateEditor"
+import { PriceComparisonTable } from "./components/PriceComparisonTable"
 import { isoDate, cn } from "./lib/utils"
 
-type Tab = "analysis" | "listings"
+type Tab = "analysis" | "listings" | "pricing"
 
 const today     = isoDate(new Date())
 const nextMonth = isoDate(new Date(Date.now() + 30 * 86_400_000))
@@ -22,10 +25,13 @@ export default function App() {
   const { groups, loading: loadingRegions, progress: regionProgress, error: regionError, load: loadRegions } = useListingsWithRegion()
   const { run, results, loading: running, progress, error: analysisError } = useAnalysis()
 
+  const { getTemplate } = usePricingTemplates()
   const [tab, setTab]               = useState<Tab>("analysis")
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null)
   const [baseDate, setBaseDate]     = useState(today)
   const [cmpDate,  setCmpDate]      = useState(nextMonth)
+  const [pricingRegionId, setPricingRegionId] = useState<string | null>(null)
+  const [pricingYear, setPricingYear] = useState(new Date().getFullYear())
 
   const selectedGroup = groups.find((g) => g.regionId === selectedRegionId) ?? null
 
@@ -68,6 +74,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto mt-3 flex gap-1">
           {([
             { key: "analysis", label: "Análise de Saltos",  Icon: BarChart2  },
+            { key: "pricing",  label: "Tabela de Preços",   Icon: Tag        },
             { key: "listings", label: "Imóveis por Região", Icon: Building2  },
           ] as const).map(({ key, label, Icon }) => (
             <button
@@ -88,6 +95,84 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+        {tab === "pricing" && (
+          <div className="space-y-4">
+            {/* Controls */}
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+              <div className="flex flex-wrap items-end gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Ano</label>
+                  <input
+                    type="number"
+                    value={pricingYear}
+                    onChange={(e) => setPricingYear(parseInt(e.target.value) || new Date().getFullYear())}
+                    className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-orange-400"
+                  />
+                </div>
+                <div className="min-w-[260px]">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Região Tarifária</label>
+                  {loadingRegions ? (
+                    <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-400">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-orange-400 shrink-0" />
+                      Carregando regiões… {regionProgress}%
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <select
+                        value={pricingRegionId ?? ""}
+                        onChange={(e) => setPricingRegionId(e.target.value || null)}
+                        className={cn(
+                          "w-full appearance-none px-3 py-2 pr-8 border rounded-lg text-sm outline-none bg-white transition-colors",
+                          pricingRegionId
+                            ? "border-orange-400 text-gray-800 font-medium"
+                            : "border-gray-200 text-gray-400"
+                        )}
+                      >
+                        <option value="">Selecionar região…</option>
+                        {groups.map((g) => (
+                          <option key={g.regionId} value={g.regionId}>
+                            {g.regionName} ({g.listings.length})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {pricingRegionId && (() => {
+              const pricingGroup = groups.find((g) => g.regionId === pricingRegionId)
+              const pricingListings = pricingGroup
+                ? listings.filter((l) => pricingGroup.listings.some((sl) => sl.id === l.id))
+                : []
+              const template = getTemplate(pricingRegionId)
+              return (
+                <div className="space-y-4">
+                  <TemplateEditor
+                    regionId={pricingRegionId}
+                    regionName={pricingGroup?.regionName ?? pricingRegionId}
+                  />
+                  <PriceComparisonTable
+                    regionId={pricingRegionId}
+                    listings={pricingListings}
+                    template={template}
+                    year={pricingYear}
+                  />
+                </div>
+              )
+            })()}
+
+            {!pricingRegionId && (
+              <div className="text-center py-20 text-gray-400">
+                <Tag className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">Selecione uma região tarifária para ver a tabela de preços.</p>
+              </div>
+            )}
+          </div>
+        )}
+
         {tab === "listings" && (
           <ListingsView
             groups={groups}
