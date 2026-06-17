@@ -74,12 +74,20 @@ export async function fetchPriceRegions(): Promise<{ _id: string; name: string }
 
 export async function updateSeasonRate(
   seasonId: string,
+  listingId: string,
   baseRateValue: number
 ): Promise<boolean> {
-  const res = await fetch(`${BASE_URL}/parr/listing-rates-sell/${seasonId}`, {
-    method: "PATCH",
-    headers,
-    body: JSON.stringify({ baseRateValue }),
-  })
+  const res = await fetch(
+    `${BASE_URL}/parr/listing-rates-sell/${seasonId}?listingId=${listingId}`,
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ listingId, type: "global", baseRateValue }),
+    }
+  )
+  if (!res.ok) {
+    const msg = await res.text().catch(() => String(res.status))
+    console.error("updateSeasonRate failed:", res.status, msg)
+  }
   return res.ok
 }

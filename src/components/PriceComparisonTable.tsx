@@ -28,15 +28,15 @@ export function PriceComparisonTable({ listings, template, year }: Props) {
     Promise.all(
       listings.map((l) =>
         fetchRates(l.id, from, to)
-          .then((seasons) => ({ id: l.id, seasons }))
-          .catch(() => ({ id: l.id, seasons: [] }))
+          .then((seasons) => ({ id: l.id, seasons: seasons ?? [] }))
+          .catch(() => ({ id: l.id, seasons: [] as Season[] }))
       )
     ).then((results) => {
       const map: Record<string, Season[]> = {}
       for (const r of results) map[r.id] = r.seasons
       setRatesMap(map)
       setFetching(false)
-    })
+    }).catch(() => setFetching(false))
   }, [listings, year])
 
   // Find base season template
@@ -61,7 +61,7 @@ export function PriceComparisonTable({ listings, template, year }: Props) {
       const expected = Math.round(baseRate * tmpl.multiplierPct / 100)
       setCellState((prev) => ({ ...prev, [key]: "loading" }))
       const newBase = computeNewBaseRateValue(targetSeason, tmpl.minNights, expected)
-      const ok = await updateSeasonRate(targetSeason._idseason, newBase)
+      const ok = await updateSeasonRate(targetSeason._idseason, listing.id, newBase)
       setCellState((prev) => ({ ...prev, [key]: ok ? "done" : "error" }))
     }
   }
@@ -76,7 +76,7 @@ export function PriceComparisonTable({ listings, template, year }: Props) {
     const expected = Math.round(baseRate * tmpl.multiplierPct / 100)
     setCellState((prev) => ({ ...prev, [key]: "loading" }))
     const newBase = computeNewBaseRateValue(targetSeason, tmpl.minNights, expected)
-    const ok = await updateSeasonRate(targetSeason._idseason, newBase)
+    const ok = await updateSeasonRate(targetSeason._idseason, listingId, newBase)
     setCellState((prev) => ({ ...prev, [key]: ok ? "done" : "error" }))
   }
 
@@ -89,7 +89,8 @@ export function PriceComparisonTable({ listings, template, year }: Props) {
     )
   }
 
-  const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR")}`
+  const brl = (v: number | null | undefined) =>
+    v == null ? "—" : `R$ ${v.toLocaleString("pt-BR")}`
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
@@ -121,6 +122,12 @@ export function PriceComparisonTable({ listings, template, year }: Props) {
                 const key = `${l.id}_${tmpl.id}`
                 const cs = cellState[key] ?? "idle"
                 const seasons = ratesMap[l.id] ?? []
+
+                // Guard against invalid template season data during editing
+                if (!tmpl.startMD?.match(/^\d{2}-\d{2}$/) || !tmpl.endMD?.match(/^\d{2}-\d{2}$/)) {
+                  return <td key={l.id} className="py-2 px-3 text-gray-300">—</td>
+                }
+
                 const targetSeason = findBestMatchingSeason(seasons, tmpl, year)
                 const baseRate = getBaseRate(l.id)
 
@@ -128,8 +135,8 @@ export function PriceComparisonTable({ listings, template, year }: Props) {
                   return <td key={l.id} className="py-2 px-3 text-gray-300">—</td>
                 }
 
-                const current = effectiveRate(targetSeason, tmpl.minNights)
-                const expected = Math.round(baseRate * tmpl.multiplierPct / 100)
+                const current = effectiveRate(targetSeason, tmpl.minNights) ?? 0
+                const expected = Math.round((baseRate ?? 0) * (tmpl.multiplierPct ?? 100) / 100)
                 const diff = expected - current
                 const diffPct = current > 0 ? Math.round((diff / current) * 100) : 0
 

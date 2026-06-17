@@ -54,7 +54,7 @@ export function CorrectionPanel({ results }: Props) {
     const id = item.listing.id
     setLS(id, { applying: true, done: false, error: false })
     const newRate = Math.round(item.baseSeason.baseRateValue * (1 + pct / 100))
-    const ok = await updateSeasonRate(item.compareSeason._idseason, newRate)
+    const ok = await updateSeasonRate(item.compareSeason._idseason, item.listing.id, newRate)
     setLS(id, { applying: false, done: ok, error: !ok })
   }
 

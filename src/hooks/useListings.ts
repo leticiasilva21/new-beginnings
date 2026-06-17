@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { fetchListings } from "../lib/stays"
 import type { Listing } from "../types"
 
@@ -7,12 +7,16 @@ export function useListings() {
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState<string | null>(null)
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true)
+    setError(null)
     fetchListings()
       .then(setListings)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
   }, [])
 
-  return { listings, loading, error }
+  useEffect(() => { load() }, [load])
+
+  return { listings, loading, error, reload: load }
 }

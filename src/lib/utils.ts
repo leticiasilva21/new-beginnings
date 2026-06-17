@@ -5,13 +5,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function fmtBRL(value: number | null): string {
-  if (value === null) return "—"
+export function fmtBRL(value: number | null | undefined): string {
+  if (value == null) return "—"
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 }
 
-export function fmtPct(value: number | null): string {
-  if (value === null) return "—"
+export function fmtPct(value: number | null | undefined): string {
+  if (value == null) return "—"
   const sign = value > 0 ? "+" : ""
   return `${sign}${value.toFixed(1)}%`
 }

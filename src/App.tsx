@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { RefreshCw, Building2, BarChart2, ChevronDown, Tag } from "lucide-react"
 import { useListings }           from "./hooks/useListings"
 import { useListingsWithRegion } from "./hooks/useListingsWithRegion"
@@ -8,9 +8,9 @@ import { DatePicker }      from "./components/DatePicker"
 import { SummaryCards }    from "./components/SummaryCards"
 import { ResultsTable }    from "./components/ResultsTable"
 import { ListingsView }    from "./components/ListingsView"
-import { CorrectionPanel } from "./components/CorrectionPanel"
 import { TemplateEditor }  from "./components/TemplateEditor"
 import { PriceComparisonTable } from "./components/PriceComparisonTable"
+import { ErrorBoundary } from "./components/ErrorBoundary"
 import { isoDate, cn } from "./lib/utils"
 
 type Tab = "analysis" | "listings" | "pricing"
@@ -21,7 +21,7 @@ const nextMonth = isoDate(new Date(Date.now() + 30 * 86_400_000))
 const THRESHOLD = 30
 
 export default function App() {
-  const { listings, loading: loadingListings } = useListings()
+  const { listings, loading: loadingListings, error: listingsError, reload: reloadListings } = useListings()
   const { groups, loading: loadingRegions, progress: regionProgress, error: regionError, load: loadRegions } = useListingsWithRegion()
   const { run, results, loading: running, progress, error: analysisError } = useAnalysis()
 
@@ -36,16 +36,20 @@ export default function App() {
   const selectedGroup = groups.find((g) => g.regionId === selectedRegionId) ?? null
 
   // Listings from the selected region (matched against full listing data)
-  const targetListings = selectedGroup
-    ? listings.filter((l) => selectedGroup.listings.some((sl) => sl.id === l.id))
-    : []
+  const targetListings = useMemo(
+    () => selectedGroup
+      ? listings.filter((l) => selectedGroup.listings.some((sl) => sl.id === l.id))
+      : [],
+    [selectedGroup, listings]
+  )
 
-  // Auto-run analysis whenever region or dates change (and everything is ready)
+  // Auto-run analysis whenever region, dates, or listings change (and everything is ready)
   useEffect(() => {
     if (!selectedRegionId || !baseDate || !cmpDate) return
-    if (loadingRegions || loadingListings || targetListings.length === 0) return
+    if (loadingRegions || loadingListings) return
+    if (targetListings.length === 0) return
     run(targetListings, baseDate, cmpDate)
-  }, [selectedRegionId, baseDate, cmpDate]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedRegionId, baseDate, cmpDate, targetListings, loadingRegions, loadingListings]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -62,9 +66,24 @@ export default function App() {
                 Carregando regiões… {regionProgress}%
               </span>
             )}
-            {!loadingListings && (
+            {!loadingListings && listings.length > 0 && (
               <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
                 {listings.length} imóveis ativos
+              </span>
+            )}
+            {!loadingListings && (listingsError || listings.length === 0) && (
+              <button
+                onClick={reloadListings}
+                className="flex items-center gap-1.5 text-xs bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1 rounded-full font-medium transition-colors"
+              >
+                <RefreshCw className="w-3 h-3" />
+                {listingsError ? "Erro ao carregar — Reconectar" : "0 imóveis — Reconectar"}
+              </button>
+            )}
+            {loadingListings && (
+              <span className="text-xs text-gray-400 flex items-center gap-1">
+                <RefreshCw className="w-3 h-3 animate-spin" />
+                Carregando imóveis…
               </span>
             )}
           </div>
@@ -96,6 +115,7 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {tab === "pricing" && (
+          <ErrorBoundary label="Tabela de Preços">
           <div className="space-y-4">
             {/* Controls */}
             <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
@@ -171,6 +191,7 @@ export default function App() {
               </div>
             )}
           </div>
+          </ErrorBoundary>
         )}
 
         {tab === "listings" && (
@@ -269,8 +290,7 @@ export default function App() {
             {results.length > 0 && (
               <>
                 <SummaryCards results={results} threshold={THRESHOLD} />
-                <ResultsTable results={results} threshold={THRESHOLD} />
-                <CorrectionPanel results={results} />
+                <ResultsTable results={results} threshold={THRESHOLD} cmpDate={cmpDate} getTemplate={getTemplate} />
               </>
             )}
 
