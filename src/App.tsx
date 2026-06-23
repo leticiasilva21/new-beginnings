@@ -10,6 +10,7 @@ import { ResultsTable }    from "./components/ResultsTable"
 import { ListingsView }    from "./components/ListingsView"
 import { TemplateEditor }  from "./components/TemplateEditor"
 import { PriceComparisonTable } from "./components/PriceComparisonTable"
+import { BulkPriceAdjustment } from "./components/BulkPriceAdjustment"
 import { ErrorBoundary } from "./components/ErrorBoundary"
 import { isoDate, cn } from "./lib/utils"
 
@@ -173,6 +174,11 @@ export default function App() {
                   <TemplateEditor
                     regionId={pricingRegionId}
                     regionName={pricingGroup?.regionName ?? pricingRegionId}
+                  />
+                  <BulkPriceAdjustment
+                    listings={pricingListings}
+                    template={template}
+                    year={pricingYear}
                   />
                   <PriceComparisonTable
                     regionId={pricingRegionId}
