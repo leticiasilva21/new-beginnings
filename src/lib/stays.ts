@@ -1,6 +1,6 @@
 import type { Listing, Season } from "../types"
 
-const BASE_URL = "https://ucavfotyciwnqwurzjny.supabase.co/functions/v1/stays-proxy"
+const BASE_URL = "https://stays-proxy.leticiasilvabarros09.workers.dev"
 
 const headers = {
   "Content-Type": "application/json",
