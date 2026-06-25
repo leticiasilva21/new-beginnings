@@ -74,13 +74,13 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
     return { current, next }
   }
 
-  function isClone(listingId: string, seasonId: string): boolean {
+  function isClone(listing: { id: string; _id: string }, seasonId: string): boolean {
     const tmpl = template.seasons.find((s) => s.id === seasonId)
     if (!tmpl) return false
-    const seasons = ratesMap[listingId] ?? []
+    const seasons = ratesMap[listing.id] ?? []
     const match = findBestMatchingSeason(seasons, tmpl, year)
     if (!match) return false
-    return match._idlisting !== listingId
+    return match._idlisting !== listing._id
   }
 
   async function applyAll() {
@@ -94,7 +94,7 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
 
       for (const listing of listings) {
         const key = `${listing.id}_${seasonId}`
-        if (isClone(listing.id, seasonId)) {
+        if (isClone(listing, seasonId)) {
           newState[key] = "clone"
           setCellState((prev) => ({ ...prev, [key]: "clone" }))
           continue
@@ -262,7 +262,7 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
                     {selectedSeasons.map((s) => {
                       const key = `${l.id}_${s.id}`
                       const cs = cellState[key]
-                      const clone = isClone(l.id, s.id)
+                      const clone = isClone(l, s.id)
                       const preview = getPreview(l.id, s.id)
 
                       if (cs === "done") {
