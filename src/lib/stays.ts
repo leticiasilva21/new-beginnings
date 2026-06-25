@@ -1,9 +1,18 @@
 import type { Listing, Season } from "../types"
 
-const BASE_URL = "https://stays-proxy.leticiasilvabarros09.workers.dev"
+const BASE_URL = "https://ucavfotyciwnqwurzjny.supabase.co/functions/v1/stays-proxy"
 
 const headers = {
   "Content-Type": "application/json",
+}
+
+async function fetchWithRetry(url: string, opts: RequestInit = {}, retries = 3): Promise<Response> {
+  for (let i = 0; i < retries; i++) {
+    const res = await fetch(url, opts)
+    if (res.ok || i === retries - 1) return res
+    await new Promise((r) => setTimeout(r, 1500 * (i + 1)))
+  }
+  return fetch(url, opts)
 }
 
 export async function fetchListings(): Promise<Listing[]> {
@@ -12,7 +21,7 @@ export async function fetchListings(): Promise<Listing[]> {
   const limit = 100
 
   while (true) {
-    const res = await fetch(
+    const res = await fetchWithRetry(
       `${BASE_URL}/content/listings?limit=${limit}&skip=${skip}`,
       { headers }
     )
@@ -44,7 +53,7 @@ export async function fetchRates(
   from: string,
   to: string
 ): Promise<Season[]> {
-  const res = await fetch(
+  const res = await fetchWithRetry(
     `${BASE_URL}/parr/listing-rates-sell?listingId=${listingId}&from=${from}&to=${to}`,
     { headers }
   )
@@ -54,7 +63,7 @@ export async function fetchRates(
 }
 
 export async function fetchListingSellPrice(listingId: string): Promise<{ regionId: string; regionName: string } | null> {
-  const res = await fetch(`${BASE_URL}/settings/listing/${listingId}/sellprice`, { headers })
+  const res = await fetchWithRetry(`${BASE_URL}/settings/listing/${listingId}/sellprice`, { headers })
   if (!res.ok) return null
   const data = await res.json()
   const region = data?.region
@@ -66,7 +75,7 @@ export async function fetchListingSellPrice(listingId: string): Promise<{ region
 }
 
 export async function fetchPriceRegions(): Promise<{ _id: string; name: string }[]> {
-  const res = await fetch(`${BASE_URL}/parr/price-regions`, { headers })
+  const res = await fetchWithRetry(`${BASE_URL}/parr/price-regions`, { headers })
   if (!res.ok) return []
   const data = await res.json()
   return Array.isArray(data) ? data : []
