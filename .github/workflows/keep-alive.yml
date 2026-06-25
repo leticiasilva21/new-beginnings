@@ -2,9 +2,9 @@ name: Keep Supabase proxy alive
 
 on:
   schedule:
-    # Every 6 hours: 00:00, 06:00, 12:00, 18:00 UTC
-    - cron: "0 0,6,12,18 * * *"
-  workflow_dispatch: # allow manual trigger
+    # Every 10 minutes
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
 
 jobs:
   ping:
@@ -26,14 +26,10 @@ jobs:
     needs: ping
     if: failure()
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
         with:
           version: latest
-
       - name: Redeploy edge function
         run: |
           supabase functions deploy stays-proxy \
