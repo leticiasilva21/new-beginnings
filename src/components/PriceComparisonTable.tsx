@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Check, RefreshCw } from "lucide-react"
+import { Check, RefreshCw, Copy } from "lucide-react"
 import type { Listing, Season } from "../types"
 import type { RegionTemplate } from "../types/template"
 import { fetchRates, updateSeasonRate } from "../lib/stays"
@@ -101,8 +101,17 @@ export function PriceComparisonTable({ listings, template, year }: Props) {
               Temporada
             </th>
             {listings.map((l) => (
-              <th key={l.id} className="py-2 px-3 text-left text-gray-500 font-semibold truncate max-w-[120px]">
-                {(l.internalName || l.id).slice(0, 18)}
+              <th key={l.id} className="py-2 px-3 text-left text-gray-500 font-semibold">
+                <div className="flex items-center gap-1 group max-w-[130px]">
+                  <span className="truncate">{l.internalName || l.id}</span>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(l.internalName || l.id)}
+                    className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-300 hover:text-gray-500 transition-all shrink-0"
+                    title="Copiar ID"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </button>
+                </div>
               </th>
             ))}
             <th className="py-2 px-3 text-left text-gray-500 font-semibold">Ação</th>

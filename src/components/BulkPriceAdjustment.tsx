@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { RefreshCw, Check, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react"
+import { RefreshCw, Check, AlertTriangle, TrendingUp, TrendingDown, Copy } from "lucide-react"
 import type { Listing, Season } from "../types"
 import type { RegionTemplate } from "../types/template"
 import { fetchRates, updateSeasonRate } from "../lib/stays"
@@ -256,8 +256,17 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
               <tbody>
                 {listings.map((l) => (
                   <tr key={l.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                    <td className="py-2 px-3 sticky left-0 bg-inherit font-medium text-gray-700 whitespace-nowrap max-w-[160px] truncate">
-                      {(l.internalName || l.id).slice(0, 22)}
+                    <td className="py-2 px-3 sticky left-0 bg-inherit font-medium text-gray-700 whitespace-nowrap">
+                      <div className="flex items-center gap-1 group">
+                        <span className="truncate max-w-[150px]">{l.internalName || l.id}</span>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(l.internalName || l.id)}
+                          className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-300 hover:text-gray-600 transition-all shrink-0"
+                          title="Copiar ID"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      </div>
                     </td>
                     {selectedSeasons.map((s) => {
                       const key = `${l.id}_${s.id}`
