@@ -240,7 +240,7 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
             <table className="text-xs min-w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="py-2 px-3 text-left text-gray-500 font-semibold whitespace-nowrap sticky left-0 bg-gray-50">
+                  <th className="py-2 px-3 text-left text-gray-500 font-semibold sticky left-0 bg-gray-50 border-r border-gray-100 w-[220px] min-w-[220px]">
                     Imóvel
                   </th>
                   {selectedSeasons.map((s) => (
@@ -256,9 +256,9 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
               <tbody>
                 {listings.map((l) => (
                   <tr key={l.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                    <td className="py-2 px-3 sticky left-0 bg-inherit whitespace-nowrap">
+                    <td className="py-2 px-3 sticky left-0 bg-white border-r border-gray-100 w-[220px] min-w-[220px] max-w-[220px]">
                       <div className="flex flex-col gap-0.5">
-                        <span className="font-medium text-gray-700">{l.internalName || l.id}</span>
+                        <span className="font-medium text-gray-700 text-xs truncate" title={l.internalName || l.id}>{l.internalName || l.id}</span>
                         <div className="flex items-center gap-1 group">
                           <span className="text-[10px] text-gray-400 font-mono">{l.id}</span>
                           <button

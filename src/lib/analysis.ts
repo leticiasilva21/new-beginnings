@@ -65,9 +65,13 @@ export function findBestMatchingSeason(seasons: Season[], tmpl: TemplateSeason, 
 
   let best: Season | null = null
   let bestOverlap = 0
+  let bestDuration = Infinity
   for (const s of seasons.filter((s) => s.status === "active")) {
     const ov = dateOverlap(s.from, s.to, tFrom, tTo)
-    if (ov > bestOverlap) { bestOverlap = ov; best = s }
+    const dur = new Date(s.to).getTime() - new Date(s.from).getTime()
+    if (ov > bestOverlap || (ov === bestOverlap && ov > 0 && dur < bestDuration)) {
+      bestOverlap = ov; bestDuration = dur; best = s
+    }
   }
   return best
 }
