@@ -256,9 +256,9 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
               <tbody>
                 {listings.map((l) => (
                   <tr key={l.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                    <td className="py-2 px-3 sticky left-0 bg-inherit font-medium text-gray-700">
-                      <div className="flex items-center gap-1.5 group w-max max-w-[280px]">
-                        <span className="whitespace-nowrap">{l.internalName || l.id}</span>
+                    <td className="py-2 px-3 sticky left-0 bg-inherit font-medium text-gray-700 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5 group">
+                        <span>{l.internalName || l.id}</span>
                         <button
                           onClick={() => navigator.clipboard.writeText(l.internalName || l.id)}
                           className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-300 hover:text-gray-600 transition-all shrink-0"
