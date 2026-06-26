@@ -63,14 +63,22 @@ export function findBestMatchingSeason(seasons: Season[], tmpl: TemplateSeason, 
     ? resolveDate(tmpl.endMD, year + 1)
     : resolveDate(tmpl.endMD, year)
 
+  // Score by geometric mean similarity: overlap / sqrt(durSeason × durTemplate).
+  // A 2-day holiday season 50% covered by the template scores 0.41, while a
+  // 137-day base season fully covering the same 3-day template scores only 0.15.
+  // This correctly prefers specific holiday seasons over long base seasons even
+  // when the base has more raw overlap days. Tiebreaker: shorter duration.
+  const tDur = (new Date(tTo).getTime() - new Date(tFrom).getTime()) / 86_400_000
   let best: Season | null = null
-  let bestOverlap = 0
+  let bestScore = 0
   let bestDuration = Infinity
   for (const s of seasons.filter((s) => s.status === "active")) {
     const ov = dateOverlap(s.from, s.to, tFrom, tTo)
-    const dur = new Date(s.to).getTime() - new Date(s.from).getTime()
-    if (ov > bestOverlap || (ov === bestOverlap && ov > 0 && dur < bestDuration)) {
-      bestOverlap = ov; bestDuration = dur; best = s
+    if (ov === 0) continue
+    const dur = (new Date(s.to).getTime() - new Date(s.from).getTime()) / 86_400_000
+    const score = ov / Math.sqrt(dur * tDur)
+    if (score > bestScore || (score === bestScore && dur < bestDuration)) {
+      bestScore = score; bestDuration = dur; best = s
     }
   }
   return best
