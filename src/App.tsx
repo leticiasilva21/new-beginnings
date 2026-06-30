@@ -93,7 +93,7 @@ export default function App() {
               )}
               {!loadingListings && (listingsError || listings.length === 0) && (
                 <button
-                  onClick={reloadListings}
+                  onClick={() => { reloadListings(); if (groups.length === 0) loadRegions() }}
                   className="flex items-center gap-1.5 text-xs bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-lg font-medium transition-colors"
                 >
                   <AlertCircle className="w-3 h-3" />
