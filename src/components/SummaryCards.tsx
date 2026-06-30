@@ -25,8 +25,8 @@ export function SummaryCards({ results, threshold }: Props) {
       label: `Queda acima de ${threshold}%`,
       value: drops.length,
       icon: TrendingDown,
-      accent: "text-blue-600",
-      border: "border-l-blue-500",
+      accent: "text-navy",
+      border: "border-l-navy",
     },
     {
       label: "Dentro do esperado",

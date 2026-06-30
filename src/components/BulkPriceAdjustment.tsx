@@ -130,7 +130,7 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
                 onClick={() => setDirection("up")}
                 className={cn(
                   "flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors duration-150",
-                  direction === "up" ? "bg-blue-600 text-white" : "bg-white text-gray-500 hover:bg-gray-50"
+                  direction === "up" ? "bg-navy text-white" : "bg-white text-gray-500 hover:bg-gray-50"
                 )}
               >
                 <TrendingUp className="w-4 h-4" /> Aumentar
@@ -157,7 +157,7 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
                 step={0.5}
                 value={pct}
                 onChange={(e) => setPct(Math.max(0.1, parseFloat(e.target.value) || 0))}
-                className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-navy focus:ring-1 focus:ring-navy transition-colors"
               />
               <span className="text-sm text-gray-400">%</span>
             </div>
@@ -166,7 +166,7 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
           {selectedSeasonIds.size > 0 && (
             <div className={cn(
               "px-3 py-2 rounded-lg text-sm font-semibold border",
-              direction === "up" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-red-50 text-red-700 border-red-200"
+              direction === "up" ? "bg-navy-light text-navy border-navy-light" : "bg-red-50 text-red-700 border-red-200"
             )}>
               {direction === "up" ? "+" : "−"}{pct}% em {selectedSeasonIds.size} temporada{selectedSeasonIds.size > 1 ? "s" : ""}
             </div>
@@ -183,7 +183,7 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
         <div>
           <div className="flex items-center gap-3 mb-2.5">
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Temporadas</label>
-            <button onClick={toggleAll} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+            <button onClick={toggleAll} className="text-xs text-navy hover:text-navy font-medium">
               {allSelected ? "Desmarcar todas" : "Selecionar todas"}
             </button>
           </div>
@@ -274,7 +274,7 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
                         )
                         if (cs === "loading") return (
                           <td key={s.id} className="py-2.5 px-4">
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin text-navy/60" />
                           </td>
                         )
                         if (cs === "error") return (
@@ -296,13 +296,13 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
                             <div className="flex items-center gap-1.5 flex-wrap tabular-nums">
                               <span className="text-gray-400">{brl(preview.current)}</span>
                               <span className="text-gray-300">→</span>
-                              <span className={cn("font-semibold", direction === "up" ? "text-blue-700" : "text-red-600")}>
+                              <span className={cn("font-semibold", direction === "up" ? "text-navy" : "text-red-600")}>
                                 {brl(preview.next)}
                               </span>
                               {diff !== 0 && (
                                 <span className={cn(
                                   "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                                  direction === "up" ? "bg-blue-50 text-blue-700" : "bg-red-50 text-red-600"
+                                  direction === "up" ? "bg-navy-light text-navy" : "bg-red-50 text-red-600"
                                 )}>
                                   {diff > 0 ? "+" : ""}{brl(Math.abs(diff))}
                                 </span>
@@ -327,7 +327,7 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
               disabled={applying || fetching}
               className={cn(
                 "flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                direction === "up" ? "bg-blue-600 hover:bg-blue-700" : "bg-red-500 hover:bg-red-600"
+                direction === "up" ? "bg-navy hover:bg-navy-hover" : "bg-red-500 hover:bg-red-600"
               )}
             >
               {applying

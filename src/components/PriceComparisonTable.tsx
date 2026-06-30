@@ -82,7 +82,7 @@ export function PriceComparisonTable({ listings, template, year }: Props) {
   if (fetching) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex items-center justify-center gap-2 text-gray-400 py-16">
-        <RefreshCw className="w-4 h-4 animate-spin text-blue-500" />
+        <RefreshCw className="w-4 h-4 animate-spin text-navy" />
         <span className="text-sm">Carregando tarifas…</span>
       </div>
     )
@@ -132,7 +132,7 @@ export function PriceComparisonTable({ listings, template, year }: Props) {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {template.seasons.map((tmpl, idx) => (
-              <tr key={tmpl.id} className={tmpl.isBase ? "bg-blue-50/30" : "hover:bg-gray-50 transition-colors"}>
+              <tr key={tmpl.id} className={tmpl.isBase ? "bg-navy-light/30" : "hover:bg-gray-50 transition-colors"}>
                 <td className="py-3 px-4 sticky left-0 bg-inherit border-r border-gray-100 font-medium text-gray-800 whitespace-nowrap">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tmpl.color }} />
@@ -170,7 +170,7 @@ export function PriceComparisonTable({ listings, template, year }: Props) {
                   )
                   if (cs === "loading") return (
                     <td key={l.id} className="py-3 px-4">
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-navy/60" />
                     </td>
                   )
                   if (cs === "error") return (
@@ -198,7 +198,7 @@ export function PriceComparisonTable({ listings, template, year }: Props) {
                         )}
                         <button
                           onClick={() => approveCell(l.id, idx)}
-                          className="ml-0.5 p-0.5 text-gray-300 hover:text-blue-600 transition-colors"
+                          className="ml-0.5 p-0.5 text-gray-300 hover:text-navy transition-colors"
                           title="Aprovar"
                         >
                           <Check className="w-3 h-3" />

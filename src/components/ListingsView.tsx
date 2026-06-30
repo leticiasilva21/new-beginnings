@@ -51,12 +51,12 @@ export function ListingsView({ groups, loading, progress, error, onLoad }: Props
                 placeholder="Buscar imóvel ou região…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors w-64"
+                className="pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-navy focus:ring-1 focus:ring-navy transition-colors w-64"
               />
             </div>
             {groups.length > 0 && (
               <div className="flex gap-2 text-xs">
-                <button onClick={expandAll}   className="text-blue-600 hover:text-blue-700 font-medium">Expandir tudo</button>
+                <button onClick={expandAll}   className="text-navy hover:text-navy font-medium">Expandir tudo</button>
                 <span className="text-gray-200">|</span>
                 <button onClick={collapseAll} className="text-gray-400 hover:text-gray-600">Recolher tudo</button>
               </div>
@@ -73,7 +73,7 @@ export function ListingsView({ groups, loading, progress, error, onLoad }: Props
             {groups.length === 0 && !loading && (
               <button
                 onClick={onLoad}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                className="flex items-center gap-2 bg-navy hover:bg-navy-hover text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
               >
                 <Building2 className="w-4 h-4" />
                 Carregar imóveis por região
@@ -90,7 +90,7 @@ export function ListingsView({ groups, loading, progress, error, onLoad }: Props
             </div>
             <div className="w-full bg-gray-100 rounded-full h-1.5">
               <div
-                className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                className="bg-navy h-1.5 rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>

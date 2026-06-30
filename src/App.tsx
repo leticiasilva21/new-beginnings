@@ -63,7 +63,7 @@ export default function App() {
           <div className="flex items-center justify-between h-14">
             {/* Logo / title */}
             <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-md bg-navy flex items-center justify-center shrink-0">
                 <span className="text-white text-xs font-bold">CD</span>
               </div>
               <div>
@@ -112,7 +112,7 @@ export default function App() {
                 className={cn(
                   "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors duration-150",
                   tab === key
-                    ? "border-blue-600 text-blue-700"
+                    ? "border-navy text-navy"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 )}
               >
@@ -139,14 +139,14 @@ export default function App() {
                       type="number"
                       value={pricingYear}
                       onChange={(e) => setPricingYear(parseInt(e.target.value) || new Date().getFullYear())}
-                      className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                      className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-navy focus:ring-1 focus:ring-navy transition-colors"
                     />
                   </div>
                   <div className="min-w-[280px]">
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Região Tarifária</label>
                     {loadingRegions ? (
                       <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-400">
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-500 shrink-0" />
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-navy shrink-0" />
                         Carregando regiões… {regionProgress}%
                       </div>
                     ) : (
@@ -217,7 +217,7 @@ export default function App() {
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Região Tarifária</label>
                   {loadingRegions ? (
                     <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-400">
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-500 shrink-0" />
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-navy shrink-0" />
                       Carregando regiões… {regionProgress}%
                     </div>
                   ) : (
@@ -233,7 +233,7 @@ export default function App() {
                 <DatePicker label="Data de Comparação" value={cmpDate}  onChange={setCmpDate}  />
 
                 {running && (
-                  <div className="flex items-center gap-2 text-sm text-blue-600 font-medium">
+                  <div className="flex items-center gap-2 text-sm text-navy font-medium">
                     <RefreshCw className="w-4 h-4 animate-spin" />
                     Analisando… {progress}%
                   </div>
@@ -244,7 +244,7 @@ export default function App() {
                 <div className="mt-4">
                   <div className="w-full bg-gray-100 rounded-full h-1">
                     <div
-                      className="bg-blue-600 h-1 rounded-full transition-all duration-300"
+                      className="bg-navy h-1 rounded-full transition-all duration-300"
                       style={{ width: `${running ? progress : regionProgress}%` }}
                     />
                   </div>
@@ -300,9 +300,9 @@ function RegionSelect({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          "w-full appearance-none px-3 py-2 pr-8 border rounded-lg text-sm outline-none bg-white transition-colors focus:ring-1 focus:ring-blue-500",
+          "w-full appearance-none px-3 py-2 pr-8 border rounded-lg text-sm outline-none bg-white transition-colors focus:ring-1 focus:ring-navy",
           value
-            ? "border-blue-500 text-gray-900 font-medium"
+            ? "border-navy text-gray-900 font-medium"
             : "border-gray-200 text-gray-400"
         )}
       >

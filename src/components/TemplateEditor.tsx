@@ -37,7 +37,7 @@ function MDInput({ value, onChange }: { value: string; onChange: (v: string) => 
       placeholder="MM-DD"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-20 px-2 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono transition-colors"
+      className="w-20 px-2 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-navy focus:ring-1 focus:ring-navy font-mono transition-colors"
     />
   )
 }
@@ -131,7 +131,7 @@ export function TemplateEditor({ regionId, regionName }: Props) {
           </thead>
           <tbody className="divide-y divide-gray-50">
             {seasons.map((s) => (
-              <tr key={s.id} className={s.isBase ? "bg-blue-50/40" : "hover:bg-gray-50 transition-colors"}>
+              <tr key={s.id} className={s.isBase ? "bg-navy-light/40" : "hover:bg-gray-50 transition-colors"}>
                 <td className="py-3 px-5">
                   {editMode && !s.isBase ? (
                     <input
@@ -153,7 +153,7 @@ export function TemplateEditor({ regionId, regionName }: Props) {
                       type="text"
                       value={s.name}
                       onChange={(e) => update(s.id, "name", e.target.value)}
-                      className="w-40 px-2 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                      className="w-40 px-2 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-navy focus:ring-1 focus:ring-navy transition-colors"
                     />
                   ) : (
                     <span className="font-medium text-gray-900">{s.name}</span>
@@ -176,7 +176,7 @@ export function TemplateEditor({ regionId, regionName }: Props) {
                       min={1}
                       value={s.minNights}
                       onChange={(e) => update(s.id, "minNights", parseInt(e.target.value) || 1)}
-                      className="w-16 px-2 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                      className="w-16 px-2 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-navy focus:ring-1 focus:ring-navy transition-colors"
                     />
                   ) : (
                     <span className="text-gray-700">{s.minNights}n</span>
@@ -184,14 +184,14 @@ export function TemplateEditor({ regionId, regionName }: Props) {
                 </td>
                 <td className="py-3 px-3">
                   {s.isBase ? (
-                    <span className="text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md">BASE 100%</span>
+                    <span className="text-xs font-semibold text-navy bg-navy-light px-2 py-0.5 rounded-md">BASE 100%</span>
                   ) : editMode ? (
                     <input
                       type="number"
                       min={1}
                       value={s.multiplierPct}
                       onChange={(e) => update(s.id, "multiplierPct", parseInt(e.target.value) || 100)}
-                      className="w-20 px-2 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                      className="w-20 px-2 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-navy focus:ring-1 focus:ring-navy transition-colors"
                     />
                   ) : (
                     <span className="text-gray-700">{s.multiplierPct}%</span>
@@ -236,7 +236,7 @@ export function TemplateEditor({ regionId, regionName }: Props) {
           <button
             onClick={handleSave}
             disabled={!dirty}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold transition-colors"
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-navy hover:bg-navy-hover disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold transition-colors"
           >
             {saved ? <><Check className="w-4 h-4" /> Salvo!</> : "Salvar"}
           </button>
