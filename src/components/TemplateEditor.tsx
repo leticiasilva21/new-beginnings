@@ -141,10 +141,7 @@ export function TemplateEditor({ regionId, regionName }: Props) {
                       className="w-5 h-5 rounded cursor-pointer border-0 p-0"
                     />
                   ) : (
-                    <span
-                      className="inline-block w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: s.color }}
-                    />
+                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-gray-300" />
                   )}
                 </td>
                 <td className="py-3 px-3">

@@ -135,7 +135,7 @@ export function PriceComparisonTable({ listings, template, year }: Props) {
               <tr key={tmpl.id} className={tmpl.isBase ? "bg-navy-light/30" : "hover:bg-gray-50 transition-colors"}>
                 <td className="py-3 px-4 sticky left-0 bg-inherit border-r border-gray-100 font-medium text-gray-800 whitespace-nowrap">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tmpl.color }} />
+                    <span className="w-2 h-2 rounded-full shrink-0 bg-gray-400" />
                     <span className="text-xs">{tmpl.name}</span>
                     <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded font-normal">{tmpl.minNights}n</span>
                   </div>

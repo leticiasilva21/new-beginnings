@@ -201,15 +201,10 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
                     !valid
                       ? "opacity-30 cursor-not-allowed border-gray-200 text-gray-400"
                       : checked
-                      ? "border-transparent text-white"
+                      ? "bg-navy border-navy text-white"
                       : "border-gray-200 text-gray-600 hover:border-gray-300 bg-white"
                   )}
-                  style={checked ? { backgroundColor: s.color, borderColor: s.color } : {}}
                 >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full shrink-0"
-                    style={{ backgroundColor: checked ? "rgba(255,255,255,0.7)" : s.color }}
-                  />
                   {s.name}
                   {s.isBase && <span className="opacity-60 ml-0.5">(base)</span>}
                 </button>
@@ -232,7 +227,7 @@ export function BulkPriceAdjustment({ listings, template, year }: Props) {
                     {selectedSeasons.map((s) => (
                       <th key={s.id} className="py-2.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
                         <span className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+                          <span className="w-2 h-2 rounded-full bg-gray-400" />
                           {s.name}
                         </span>
                       </th>
