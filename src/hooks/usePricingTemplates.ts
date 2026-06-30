@@ -1,8 +1,17 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import type { RegionTemplate } from "../types/template"
 import { getDefaultTemplate } from "../data/defaultSeasons"
 
 const STORAGE_KEY = "nb_pricing_templates_v1"
+
+// Module-level subscribers — notifies ALL hook instances when any saves
+const subscribers = new Set<() => void>()
+let revision = 0
+
+function notifyAll() {
+  revision++
+  subscribers.forEach((fn) => fn())
+}
 
 function loadAll(): Record<string, RegionTemplate> {
   try {
@@ -18,7 +27,13 @@ function saveAll(all: Record<string, RegionTemplate>) {
 }
 
 export function usePricingTemplates() {
-  const [, forceUpdate] = useState(0)
+  const [, setRev] = useState(revision)
+
+  useEffect(() => {
+    const notify = () => setRev(revision)
+    subscribers.add(notify)
+    return () => { subscribers.delete(notify) }
+  }, [])
 
   const getTemplate = useCallback((regionId: string): RegionTemplate => {
     const all = loadAll()
@@ -29,14 +44,14 @@ export function usePricingTemplates() {
     const all = loadAll()
     all[template.regionId] = { ...template, savedAt: new Date().toISOString() }
     saveAll(all)
-    forceUpdate((n) => n + 1)
+    notifyAll()
   }, [])
 
   const resetTemplate = useCallback((regionId: string) => {
     const all = loadAll()
     delete all[regionId]
     saveAll(all)
-    forceUpdate((n) => n + 1)
+    notifyAll()
   }, [])
 
   return { getTemplate, saveTemplate, resetTemplate }
