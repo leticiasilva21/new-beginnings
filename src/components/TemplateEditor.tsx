@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react"
-import { Trash2, Plus, Check } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Trash2, Plus, Check, Copy, ChevronDown } from "lucide-react"
 import { usePricingTemplates } from "../hooks/usePricingTemplates"
 import type { TemplateSeason } from "../types/template"
 
 interface Props {
   regionId: string
   regionName: string
+  allRegions?: { regionId: string; regionName: string }[]
 }
 
 const COLORS = [
@@ -42,12 +43,52 @@ function MDInput({ value, onChange }: { value: string; onChange: (v: string) => 
   )
 }
 
-export function TemplateEditor({ regionId, regionName }: Props) {
+export function TemplateEditor({ regionId, regionName, allRegions = [] }: Props) {
   const { getTemplate, saveTemplate, resetTemplate } = usePricingTemplates()
   const [seasons, setSeasons] = useState<TemplateSeason[]>([])
   const [dirty, setDirty] = useState(false)
   const [saved, setSaved] = useState(false)
   const [editMode, setEditMode] = useState(false)
+  const [copyOpen, setCopyOpen] = useState(false)
+  const [copySelected, setCopySelected] = useState<Set<string>>(new Set())
+  const [copyDone, setCopyDone] = useState(false)
+  const copyRef = useRef<HTMLDivElement>(null)
+
+  const otherRegions = allRegions.filter((r) => r.regionId !== regionId)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (copyRef.current && !copyRef.current.contains(e.target as Node)) {
+        setCopyOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [])
+
+  function toggleCopyRegion(id: string) {
+    setCopySelected((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleAllCopy() {
+    if (copySelected.size === otherRegions.length) {
+      setCopySelected(new Set())
+    } else {
+      setCopySelected(new Set(otherRegions.map((r) => r.regionId)))
+    }
+  }
+
+  function applyCopy() {
+    for (const rid of copySelected) {
+      saveTemplate({ regionId: rid, seasons: seasons.map((s) => ({ ...s })), savedAt: new Date().toISOString() })
+    }
+    setCopyDone(true)
+    setTimeout(() => { setCopyDone(false); setCopyOpen(false); setCopySelected(new Set()) }, 1800)
+  }
 
   useEffect(() => {
     const t = getTemplate(regionId)
@@ -223,7 +264,63 @@ export function TemplateEditor({ regionId, regionName }: Props) {
             Adicionar temporada
           </button>
         )}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-2 ml-auto flex-wrap">
+          {/* Copy to other regions */}
+          {otherRegions.length > 0 && (
+            <div className="relative" ref={copyRef}>
+              <button
+                onClick={() => { setCopyOpen((o) => !o); setCopyDone(false) }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                Aplicar em outras regiões
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${copyOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {copyOpen && (
+                <div className="absolute right-0 bottom-full mb-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-sm font-semibold text-gray-900">Aplicar template em outras regiões</p>
+                    <p className="text-xs text-gray-500 mt-0.5">O template atual de <span className="font-medium text-gray-700">{regionName}</span> será copiado para as regiões selecionadas.</p>
+                  </div>
+
+                  <div className="px-4 py-2 border-b border-gray-100">
+                    <button onClick={toggleAllCopy} className="text-xs font-medium text-navy hover:underline">
+                      {copySelected.size === otherRegions.length ? "Desmarcar todas" : "Selecionar todas"}
+                    </button>
+                  </div>
+
+                  <div className="max-h-56 overflow-y-auto divide-y divide-gray-50">
+                    {otherRegions.map((r) => (
+                      <label key={r.regionId} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={copySelected.has(r.regionId)}
+                          onChange={() => toggleCopyRegion(r.regionId)}
+                          className="w-4 h-4 rounded border-gray-300 text-navy accent-[#142851]"
+                        />
+                        <span className="text-sm text-gray-700 truncate">{r.regionName}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between gap-2">
+                    <span className="text-xs text-gray-400">
+                      {copySelected.size > 0 ? `${copySelected.size} região${copySelected.size > 1 ? "ns" : ""} selecionada${copySelected.size > 1 ? "s" : ""}` : "Nenhuma selecionada"}
+                    </span>
+                    <button
+                      onClick={applyCopy}
+                      disabled={copySelected.size === 0 || copyDone}
+                      className="flex items-center gap-1.5 px-4 py-1.5 bg-navy hover:bg-navy-hover disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      {copyDone ? <><Check className="w-3.5 h-3.5" /> Aplicado!</> : "Aplicar"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <button
             onClick={handleReset}
             className="px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-sm font-medium transition-colors"

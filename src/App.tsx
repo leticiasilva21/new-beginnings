@@ -171,6 +171,7 @@ export default function App() {
                     <TemplateEditor
                       regionId={pricingRegionId}
                       regionName={pricingGroup?.regionName ?? pricingRegionId}
+                      allRegions={groups.map((g) => ({ regionId: g.regionId, regionName: g.regionName }))}
                     />
                     <BulkPriceAdjustment
                       listings={pricingListings}
