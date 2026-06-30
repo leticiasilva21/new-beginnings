@@ -91,13 +91,13 @@ export default function App() {
                   {listings.length} imóveis
                 </span>
               )}
-              {!loadingListings && (listingsError || listings.length === 0) && (
+              {!loadingListings && !loadingRegions && (listingsError || regionError || listings.length === 0 || groups.length === 0) && (
                 <button
-                  onClick={() => { reloadListings(); if (groups.length === 0) loadRegions() }}
+                  onClick={() => { reloadListings(); loadRegions() }}
                   className="flex items-center gap-1.5 text-xs bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-lg font-medium transition-colors"
                 >
                   <AlertCircle className="w-3 h-3" />
-                  {listingsError ? "Reconectar" : "0 imóveis — Reconectar"}
+                  {regionError || groups.length === 0 ? "Erro ao carregar — Reconectar" : "0 imóveis — Reconectar"}
                 </button>
               )}
             </div>
