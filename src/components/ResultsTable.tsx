@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react"
-import { ChevronDown, ChevronUp, ArrowUpDown, MapPin, CheckCircle, AlertTriangle, Loader2 } from "lucide-react"
+import { ChevronDown, ChevronUp, ArrowUpDown, CheckCircle, AlertTriangle, Loader2, TrendingUp, TrendingDown, Minus } from "lucide-react"
 import { cn, fmtBRL, fmtPct } from "../lib/utils"
 import { updateSeasonRate } from "../lib/stays"
 import { findTemplateSeasonForDate } from "../lib/analysis"
@@ -17,14 +17,11 @@ type SortKey = "name" | "base" | "compare" | "diff" | "pct"
 type SortDir = "asc" | "desc"
 type ApproveState = "idle" | "loading" | "done" | "error" | "clone"
 
-/** Returns true if the season belongs to a DIFFERENT listing (clone relationship).
- *  Patching would break the clone and leave date gaps — must be skipped. */
 function isClonedSeason(r: PriceJump): boolean {
   if (!r.compareSeason || !r.listing._id) return false
   return r.compareSeason._idlisting !== r.listing._id
 }
 
-// localStorage key: seasonId + "|" + suggestedValue → "done"
 const APPROVED_KEY = "nb_approved_seasons_v1"
 
 function loadApproved(): Record<string, true> {
@@ -53,7 +50,6 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
     [approved]
   )
 
-  // Build sorted region list from results
   const regions = Array.from(
     new Map(results.map((r) => [r.regionId, r.regionName])).entries()
   ).sort((a, b) => a[1].localeCompare(b[1]))
@@ -71,9 +67,6 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
     })
   }
 
-  // Template for the currently filtered region.
-  // If all results belong to a single region (app-level filter), use that region
-  // even when the internal "Filtrar por Região" chip is set to "all".
   const uniqueRegionId = (() => {
     if (regionFilter !== "all") return regionFilter
     const ids = Array.from(new Set(results.map((r) => r.regionId)))
@@ -106,6 +99,33 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
     return 0
   })
 
+  function statusBadge(pct: number | null) {
+    if (pct === null) return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-gray-400">
+        <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+        Sem dados
+      </span>
+    )
+    if (pct > threshold) return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-red-600 font-medium">
+        <TrendingUp className="w-3.5 h-3.5" />
+        Salto
+      </span>
+    )
+    if (pct < -threshold) return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-blue-600 font-medium">
+        <TrendingDown className="w-3.5 h-3.5" />
+        Queda
+      </span>
+    )
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-green-600 font-medium">
+        <Minus className="w-3.5 h-3.5" />
+        Estável
+      </span>
+    )
+  }
+
   function diffClass(pct: number | null) {
     if (pct === null) return "text-gray-400"
     if (pct > threshold) return "text-red-600 font-semibold"
@@ -113,23 +133,13 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
     return "text-green-600"
   }
 
-  function rowBg(pct: number | null) {
-    if (pct === null) return ""
-    if (pct > threshold) return "bg-red-50/40"
-    if (pct < -threshold) return "bg-blue-50/40"
-    return ""
-  }
-
   async function handleApprove(r: PriceJump, suggested: number) {
     if (!r.compareSeason) return
     const id = r.listing.id
-
-    // Block PATCH if this listing clones rates from another — would break clone & create gaps
     if (isClonedSeason(r)) {
       setApproveState((p) => ({ ...p, [id]: "clone" }))
       return
     }
-
     setApproveState((p) => ({ ...p, [id]: "loading" }))
     const ok = await updateSeasonRate(r.compareSeason._idseason, r.listing.id, suggested)
     if (ok) saveApproved(approvedKey(r.compareSeason._idseason, suggested))
@@ -141,74 +151,61 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
   async function handleApproveAll() {
     if (!showTemplate || !activeTemplateSeason) return
     setApprovingAll(true)
-
-    // Only rows that have a suggestion, a compareSeason, are not a clone, and are not already approved
     const pending = sorted.filter((r) => {
       if (!r.compareSeason || r.baseAvg === null) return false
       if (isClonedSeason(r)) return false
       const sug = Math.round(r.baseAvg * activeTemplateSeason!.multiplierPct / 100)
       return !isApproved(r.compareSeason._idseason, sug) && (approveState[r.listing.id] !== "done")
     })
-
     for (const r of pending) {
       const suggested = Math.round(r.baseAvg! * activeTemplateSeason!.multiplierPct / 100)
       await handleApprove(r, suggested)
     }
-
     setApprovingAll(false)
   }
 
   const showTemplate = !!activeTemplateSeason
-  // column count: expand + name + [region] + base + compare + diffR$ + diff% + status + [sugerido + vsTabela + aprovar]
   const colSpan = (regionFilter === "all" ? 8 : 7) + (showTemplate ? 3 : 0)
 
   const Th = ({ k, label }: { k: SortKey; label: string }) => (
     <th
-      className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide cursor-pointer select-none whitespace-nowrap hover:text-gray-700"
+      className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide cursor-pointer select-none whitespace-nowrap hover:text-gray-800 transition-colors"
       onClick={() => toggleSort(k)}
     >
-      <span className="flex items-center gap-1">
+      <span className="flex items-center gap-1.5">
         {label}
         {sort === k
           ? dir === "asc"
-            ? <ChevronUp className="w-3 h-3 text-orange-500" />
-            : <ChevronDown className="w-3 h-3 text-orange-500" />
-          : <ArrowUpDown className="w-3 h-3" />}
+            ? <ChevronUp className="w-3 h-3 text-blue-600" />
+            : <ChevronDown className="w-3 h-3 text-blue-600" />
+          : <ArrowUpDown className="w-3 h-3 text-gray-300" />}
       </span>
     </th>
   )
 
-  const selectedRegionName = regionFilter === "all"
-    ? null
-    : regions.find(([id]) => id === regionFilter)?.[1]
+  const STATUS_FILTERS = [
+    { key: "all",    label: "Todos" },
+    { key: "alert",  label: "Saltos" },
+    { key: "drop",   label: "Quedas" },
+    { key: "stable", label: "Estáveis" },
+  ] as const
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Region filter */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
-          <MapPin className="w-4 h-4 text-orange-500" />
-          <span className="text-sm font-semibold text-gray-700">Filtrar por Região Tarifária</span>
-          {regionFilter !== "all" && (
-            <button
-              onClick={() => setRegionFilter("all")}
-              className="ml-auto text-xs text-gray-400 hover:text-gray-600 underline"
-            >
-              limpar filtro
-            </button>
-          )}
-        </div>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Filtrar por Região</p>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setRegionFilter("all")}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+              "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-150",
               regionFilter === "all"
-                ? "bg-orange-500 text-white border-orange-500"
-                : "bg-white text-gray-600 border-gray-200 hover:border-orange-300 hover:text-orange-600"
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-800"
             )}
           >
-            Todas as regiões
+            Todas
             <span className="ml-1.5 opacity-70">({results.length})</span>
           </button>
           {regions.map(([id, name]) => {
@@ -221,16 +218,16 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
                 key={id}
                 onClick={() => setRegionFilter(id)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5",
+                  "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-150 flex items-center gap-1.5",
                   regionFilter === id
-                    ? "bg-orange-500 text-white border-orange-500"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-orange-300 hover:text-orange-600"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-800"
                 )}
               >
                 {name}
                 <span className="opacity-70">({count})</span>
                 {alertCount > 0 && regionFilter !== id && (
-                  <span className="bg-red-100 text-red-600 text-[10px] px-1 rounded-full font-semibold">
+                  <span className="bg-red-100 text-red-600 text-[10px] px-1.5 py-0.5 rounded-full font-semibold leading-none">
                     {alertCount}
                   </span>
                 )}
@@ -239,30 +236,26 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
           })}
         </div>
 
-        {/* Template season indicator + Aprovar Tudo */}
         {showTemplate && activeTemplateSeason && (
-          <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <span
-                className="inline-block w-2.5 h-2.5 rounded-full"
+                className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: activeTemplateSeason.color }}
               />
               <span>
-                Temporada da tabela para {cmpDate}:&nbsp;
-                <strong className="text-gray-800">{activeTemplateSeason.name}</strong>
-                &nbsp;— multiplicador{" "}
-                <strong className="text-orange-600">{activeTemplateSeason.multiplierPct}%</strong>
-                &nbsp;da Baixa T1
+                Temporada em {cmpDate}: <strong className="text-gray-800">{activeTemplateSeason.name}</strong>
+                {" — "}<strong className="text-blue-600">{activeTemplateSeason.multiplierPct}%</strong> da Baixa T1
               </span>
             </div>
             <button
               onClick={handleApproveAll}
               disabled={approvingAll}
               className={cn(
-                "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm",
+                "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors",
                 approvingAll
-                  ? "bg-indigo-200 text-indigo-400 cursor-not-allowed"
-                  : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
               )}
             >
               {approvingAll
@@ -275,78 +268,61 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
 
       {/* Status filter + count */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex gap-2 flex-wrap">
-          {(["all", "alert", "drop", "stable"] as const).map((f) => (
+        <div className="flex gap-1.5 p-1 bg-white border border-gray-200 rounded-lg shadow-sm">
+          {STATUS_FILTERS.map((f) => (
             <button
-              key={f}
-              onClick={() => setStatusFilter(f)}
+              key={f.key}
+              onClick={() => setStatusFilter(f.key)}
               className={cn(
-                "px-3 py-1 rounded-full text-xs font-medium transition-colors",
-                statusFilter === f
-                  ? "bg-orange-500 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                "px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-150",
+                statusFilter === f.key
+                  ? "bg-gray-900 text-white"
+                  : "text-gray-500 hover:text-gray-700"
               )}
             >
-              {{ all: "Todos", alert: "🚨 Alertas", drop: "📉 Quedas", stable: "✅ Estáveis" }[f]}
+              {f.label}
             </button>
           ))}
         </div>
-
-        <div className="flex items-center gap-3">
-          {false && (
-            <button
-              onClick={handleApproveAll}
-              disabled={approvingAll}
-              className={cn(
-                "flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-                approvingAll
-                  ? "bg-indigo-200 text-indigo-400 cursor-not-allowed"
-                  : "bg-indigo-600 hover:bg-indigo-700 text-white"
-              )}
-            >
-              {approvingAll
-                ? <><Loader2 className="w-3 h-3 animate-spin" /> Aplicando…</>
-                : <><CheckCircle className="w-3 h-3" /> Aprovar tudo</>}
-            </button>
-          )}
-          <span className="text-xs text-gray-400">
-            {sorted.length} imóvel{sorted.length !== 1 ? "is" : ""}
-            {selectedRegionName ? ` · ${selectedRegionName}` : ""}
-          </span>
-        </div>
+        <span className="text-xs text-gray-400">
+          {sorted.length} imóvel{sorted.length !== 1 ? "is" : ""}
+          {regionFilter !== "all" && regions.find(([id]) => id === regionFilter)
+            ? ` · ${regions.find(([id]) => id === regionFilter)?.[1]}`
+            : ""}
+        </span>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+      {/* Table */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="w-8 px-3 py-3" />
+                <th className="w-10 px-3 py-3" />
                 <Th k="name" label="Imóvel" />
                 {regionFilter === "all" && (
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Região</th>
                 )}
-                <Th k="base" label="Diária Base" />
+                <Th k="base"    label="Diária Base" />
                 <Th k="compare" label="Diária Atual" />
-                <Th k="diff" label="Variação R$" />
-                <Th k="pct" label="Variação %" />
+                <Th k="diff"    label="Variação R$" />
+                <Th k="pct"     label="Variação %" />
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
                 {showTemplate && <>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-500 uppercase tracking-wide">Sugerido</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-500 uppercase tracking-wide">vs Tabela</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-500 uppercase tracking-wide">Aprovar</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-blue-600 uppercase tracking-wide">Sugerido</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-blue-600 uppercase tracking-wide">vs Tabela</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-blue-600 uppercase tracking-wide">Aprovar</th>
                 </>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {sorted.map((r) => {
+              {sorted.map((r, idx) => {
                 const isOpen = expanded.has(r.listing.id)
                 const pct = r.diffPercent
                 const aState = approveState[r.listing.id] ?? "idle"
 
-                // Template suggestion
                 let suggested: number | null = null
-                let vsTabela: number | null = null  // % difference: current vs suggested
+                let vsTabela: number | null = null
                 if (showTemplate && activeTemplateSeason && r.baseAvg !== null && r.compareAvg !== null) {
                   suggested = Math.round(r.baseAvg * activeTemplateSeason.multiplierPct / 100)
                   vsTabela = Math.round(((r.compareAvg - suggested) / suggested) * 100)
@@ -363,75 +339,60 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
                       key={r.listing.id}
                       className={cn(
                         "hover:bg-gray-50 transition-colors cursor-pointer",
-                        rowBg(pct),
+                        idx % 2 === 1 && "bg-gray-50/30",
                         isDone && "bg-green-50/40"
                       )}
                       onClick={() => toggleExpand(r.listing.id)}
                     >
-                      <td className="px-3 py-3 text-gray-400">
-                        {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      <td className="px-3 py-3.5 text-gray-300">
+                        {isOpen
+                          ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                          : <ChevronDown className="w-4 h-4" />}
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="font-semibold text-gray-800">{r.listing.internalName || r.listing.id}</div>
-                        <div className="font-mono text-xs text-gray-400">{r.listing.id}</div>
+                      <td className="px-4 py-3.5">
+                        <div className="font-medium text-gray-900">{r.listing.internalName || r.listing.id}</div>
+                        <div className="font-mono text-xs text-gray-400 mt-0.5">{r.listing.id}</div>
                       </td>
                       {regionFilter === "all" && (
-                        <td className="px-4 py-3">
-                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+                        <td className="px-4 py-3.5">
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md whitespace-nowrap">
                             {r.regionName}
                           </span>
                         </td>
                       )}
-                      <td className="px-4 py-3 text-gray-700">{fmtBRL(r.baseAvg)}</td>
-                      <td className="px-4 py-3 text-gray-700">{fmtBRL(r.compareAvg)}</td>
-                      <td className={cn("px-4 py-3", diffClass(pct))}>
+                      <td className="px-4 py-3.5 text-gray-600 tabular-nums">{fmtBRL(r.baseAvg)}</td>
+                      <td className="px-4 py-3.5 text-gray-600 tabular-nums">{fmtBRL(r.compareAvg)}</td>
+                      <td className={cn("px-4 py-3.5 tabular-nums", diffClass(pct))}>
                         {r.diffValue !== null ? (r.diffValue > 0 ? "+" : "") + fmtBRL(r.diffValue) : "—"}
                       </td>
-                      <td className={cn("px-4 py-3 text-base", diffClass(pct))}>
+                      <td className={cn("px-4 py-3.5 font-semibold tabular-nums", diffClass(pct))}>
                         {fmtPct(pct)}
                       </td>
-                      <td className="px-4 py-3">
-                        {pct === null ? (
-                          <span className="text-xs text-gray-400">sem dados</span>
-                        ) : pct > threshold ? (
-                          <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-medium">🚨 Salto</span>
-                        ) : pct < -threshold ? (
-                          <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">📉 Queda</span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">✅ Estável</span>
-                        )}
-                      </td>
+                      <td className="px-4 py-3.5">{statusBadge(pct)}</td>
 
-                      {/* Template columns */}
                       {showTemplate && (
                         <>
-                          <td className="px-4 py-3 font-semibold text-indigo-700" onClick={(e) => e.stopPropagation()}>
+                          <td className="px-4 py-3.5 font-semibold text-blue-700 tabular-nums" onClick={(e) => e.stopPropagation()}>
                             {suggested !== null ? fmtBRL(suggested) : <span className="text-gray-300">—</span>}
                           </td>
-                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                             {vsTabela === null ? (
                               <span className="text-gray-300">—</span>
                             ) : Math.abs(vsTabela) <= 3 ? (
-                              <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">
-                                ✓ Alinhado
-                              </span>
+                              <span className="text-xs text-green-600 font-medium">Alinhado</span>
                             ) : vsTabela > 0 ? (
-                              <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded-full font-medium">
-                                +{vsTabela}% acima
-                              </span>
+                              <span className="text-xs text-orange-600 font-medium">+{vsTabela}% acima</span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-medium">
-                                {vsTabela}% abaixo
-                              </span>
+                              <span className="text-xs text-red-600 font-medium">{vsTabela}% abaixo</span>
                             )}
                           </td>
-                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                             {isDone ? (
                               <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
                                 <CheckCircle className="w-3.5 h-3.5" /> Aprovado
                               </span>
                             ) : aState === "clone" || (suggested !== null && r.compareSeason && isClonedSeason(r)) ? (
-                              <span className="flex items-center gap-1 text-xs text-amber-600 font-medium" title="Este imóvel clona preços de outro anúncio no Stays. Ajuste diretamente no anúncio-fonte.">
+                              <span className="flex items-center gap-1 text-xs text-amber-600 font-medium" title="Imóvel clona preços de outro anúncio. Ajuste no anúncio-fonte.">
                                 <AlertTriangle className="w-3.5 h-3.5" /> Clone
                               </span>
                             ) : aState === "error" ? (
@@ -440,13 +401,13 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
                               </span>
                             ) : suggested !== null && r.compareSeason ? (
                               <button
-                                disabled={aState === "loading" || isDone || vsTabela !== null && Math.abs(vsTabela) <= 3}
+                                disabled={aState === "loading" || isDone || (vsTabela !== null && Math.abs(vsTabela) <= 3)}
                                 onClick={() => handleApprove(r, suggested!)}
                                 className={cn(
-                                  "flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold transition-colors",
+                                  "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
                                   aState === "loading" || (vsTabela !== null && Math.abs(vsTabela) <= 3)
                                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                    : "bg-indigo-500 hover:bg-indigo-600 text-white"
+                                    : "bg-blue-600 hover:bg-blue-700 text-white"
                                 )}
                               >
                                 {aState === "loading"
@@ -463,7 +424,7 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
 
                     {isOpen && (
                       <tr key={`${r.listing.id}-detail`} className="bg-gray-50">
-                        <td colSpan={colSpan} className="px-6 py-4">
+                        <td colSpan={colSpan} className="px-6 py-5">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                             <SeasonDetail title="Período Base" season={r.baseSeason} />
                             <SeasonDetail title="Período Comparação" season={r.compareSeason} />
@@ -476,7 +437,7 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
               })}
               {sorted.length === 0 && (
                 <tr>
-                  <td colSpan={colSpan} className="px-4 py-8 text-center text-gray-400 text-sm">
+                  <td colSpan={colSpan} className="px-4 py-12 text-center text-gray-400 text-sm">
                     Nenhum resultado para este filtro.
                   </td>
                 </tr>
@@ -492,31 +453,31 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
 function SeasonDetail({ title, season }: { title: string; season: any }) {
   if (!season) return (
     <div>
-      <div className="font-medium text-gray-600 mb-1">{title}</div>
-      <div className="text-gray-400">Sem temporada encontrada</div>
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{title}</p>
+      <p className="text-sm text-gray-400">Sem temporada encontrada</p>
     </div>
   )
   return (
     <div>
-      <div className="font-medium text-gray-600 mb-2">{title}</div>
-      <div className="bg-white rounded-lg border border-gray-200 p-3 space-y-1.5">
-        <div className="flex justify-between">
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{title}</p>
+      <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
+        <div className="flex justify-between text-sm">
           <span className="text-gray-500">Período</span>
-          <span className="font-medium">{season.from} → {season.to}</span>
+          <span className="font-medium text-gray-900">{season.from} → {season.to}</span>
         </div>
-        <div className="flex justify-between">
+        <div className="flex justify-between text-sm">
           <span className="text-gray-500">Diária base</span>
-          <span className="font-semibold text-gray-800">
+          <span className="font-semibold text-gray-900">
             {season.baseRateValue?.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
           </span>
         </div>
         {season.ratePlans?.length > 0 && (
-          <div className="pt-1 border-t border-gray-100">
-            <div className="text-xs text-gray-500 mb-1">Planos de desconto</div>
+          <div className="pt-2 border-t border-gray-100 space-y-1">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Planos de desconto</p>
             {season.ratePlans.map((rp: any, i: number) => (
-              <div key={i} className="flex justify-between text-xs text-gray-600">
+              <div key={i} className="flex justify-between text-xs text-gray-500">
                 <span>{rp.minStay}+ noites ({rp._i_percent}% off)</span>
-                <span>{rp._f_val?.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                <span className="font-medium text-gray-700">{rp._f_val?.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
               </div>
             ))}
           </div>

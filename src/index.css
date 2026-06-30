@@ -8,8 +8,9 @@
   }
   body {
     margin: 0;
-    font-family: system-ui, -apple-system, sans-serif;
-    background: #f9fafb;
-    color: #111827;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #F7F8FA;
+    color: #1F2937;
+    -webkit-font-smoothing: antialiased;
   }
 }

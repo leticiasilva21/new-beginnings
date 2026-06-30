@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, HelpCircle } from "lucide-react"
 import type { PriceJump } from "../types"
 
 interface Props {
@@ -15,50 +15,47 @@ export function SummaryCards({ results, threshold }: Props) {
 
   const cards = [
     {
-      label: `Salto > ${threshold}%`,
+      label: `Salto acima de ${threshold}%`,
       value: alerts.length,
       icon: TrendingUp,
-      color: "text-red-500",
-      bg: "bg-red-50",
-      border: "border-red-100",
+      accent: "text-red-600",
+      border: "border-l-red-500",
     },
     {
-      label: `Queda > ${threshold}%`,
+      label: `Queda acima de ${threshold}%`,
       value: drops.length,
       icon: TrendingDown,
-      color: "text-blue-500",
-      bg: "bg-blue-50",
-      border: "border-blue-100",
+      accent: "text-blue-600",
+      border: "border-l-blue-500",
     },
     {
-      label: "Estável",
+      label: "Dentro do esperado",
       value: stable.length,
       icon: Minus,
-      color: "text-green-500",
-      bg: "bg-green-50",
-      border: "border-green-100",
+      accent: "text-green-600",
+      border: "border-l-green-500",
     },
     {
       label: "Sem dados",
       value: noData.length,
-      icon: AlertTriangle,
-      color: "text-gray-400",
-      bg: "bg-gray-50",
-      border: "border-gray-100",
+      icon: HelpCircle,
+      accent: "text-gray-400",
+      border: "border-l-gray-300",
     },
   ]
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
       {cards.map((c) => (
-        <div key={c.label} className={`rounded-xl border ${c.bg} ${c.border} p-4 flex items-center gap-3`}>
-          <div className={`rounded-lg p-2 bg-white ${c.color}`}>
-            <c.icon className="w-5 h-5" />
+        <div
+          key={c.label}
+          className={`bg-white rounded-lg border border-gray-200 border-l-4 ${c.border} shadow-sm p-5`}
+        >
+          <div className="flex items-start justify-between mb-3">
+            <span className="text-2xl font-bold text-gray-900">{c.value}</span>
+            <c.icon className={`w-4 h-4 mt-1 ${c.accent}`} />
           </div>
-          <div>
-            <div className="text-2xl font-bold text-gray-800">{c.value}</div>
-            <div className="text-xs text-gray-500">{c.label}</div>
-          </div>
+          <p className="text-xs text-gray-500 leading-snug">{c.label}</p>
         </div>
       ))}
     </div>
