@@ -105,22 +105,20 @@ export function PriceComparisonTable({ listings, template, year }: Props) {
                 Temporada
               </th>
               {listings.map((l) => (
-                <th key={l.id} className="py-3 px-4 text-left">
-                  <div className="flex items-start gap-1 group min-w-[120px] max-w-[160px]">
-                    <div>
-                      <div className="text-xs font-medium text-gray-700 truncate" title={l.internalName || l.id}>
-                        {l.internalName || l.id}
-                      </div>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <span className="font-mono text-[10px] text-gray-400">{l.id}</span>
-                        <button
-                          onClick={() => navigator.clipboard.writeText(l.id)}
-                          className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-300 hover:text-gray-600 transition-all shrink-0"
-                          title="Copiar ID"
-                        >
-                          <Copy className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
+                <th key={l.id} className="py-3 px-4 text-left w-[140px] min-w-[140px] max-w-[140px]">
+                  <div className="group w-full overflow-hidden">
+                    <div className="text-xs font-medium text-gray-700 truncate w-full" title={l.internalName || l.id}>
+                      {l.internalName || l.id}
+                    </div>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="font-mono text-[10px] text-gray-400 truncate">{l.id}</span>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(l.id)}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-300 hover:text-gray-600 transition-all shrink-0"
+                        title="Copiar ID"
+                      >
+                        <Copy className="w-2.5 h-2.5" />
+                      </button>
                     </div>
                   </div>
                 </th>
