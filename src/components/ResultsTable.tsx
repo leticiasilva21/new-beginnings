@@ -81,9 +81,9 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
 
   const filtered = results.filter((r) => {
     if (regionFilter !== "all" && r.regionId !== regionFilter) return false
-    if (statusFilter === "alert")  return r.diffPercent !== null && r.diffPercent > threshold
-    if (statusFilter === "drop")   return r.diffPercent !== null && r.diffPercent < -threshold
-    if (statusFilter === "stable") return r.diffPercent !== null && Math.abs(r.diffPercent) <= threshold
+    if (statusFilter === "alert")  return r.deviationFromExpected !== null && r.deviationFromExpected > threshold
+    if (statusFilter === "drop")   return r.deviationFromExpected !== null && r.deviationFromExpected < -threshold
+    if (statusFilter === "stable") return r.deviationFromExpected !== null && Math.abs(r.deviationFromExpected) <= threshold
     return true
   })
 
@@ -93,7 +93,7 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
     if (sort === "base")    { va = a.baseAvg ?? -Infinity; vb = b.baseAvg ?? -Infinity }
     if (sort === "compare") { va = a.compareAvg ?? -Infinity; vb = b.compareAvg ?? -Infinity }
     if (sort === "diff")    { va = a.diffValue ?? -Infinity; vb = b.diffValue ?? -Infinity }
-    if (sort === "pct")     { va = a.diffPercent !== null ? Math.abs(a.diffPercent) : -Infinity; vb = b.diffPercent !== null ? Math.abs(b.diffPercent) : -Infinity }
+    if (sort === "pct")     { va = a.deviationFromExpected !== null ? Math.abs(a.deviationFromExpected) : -Infinity; vb = b.deviationFromExpected !== null ? Math.abs(b.deviationFromExpected) : -Infinity }
     if (va < vb) return dir === "asc" ? -1 : 1
     if (va > vb) return dir === "asc" ? 1 : -1
     return 0
@@ -211,7 +211,7 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
           {regions.map(([id, name]) => {
             const count = results.filter((r) => r.regionId === id).length
             const alertCount = results.filter(
-              (r) => r.regionId === id && r.diffPercent !== null && Math.abs(r.diffPercent) > threshold
+              (r) => r.regionId === id && r.deviationFromExpected !== null && Math.abs(r.deviationFromExpected) > threshold
             ).length
             return (
               <button
@@ -318,7 +318,7 @@ export function ResultsTable({ results, threshold, cmpDate, getTemplate }: Props
             <tbody className="divide-y divide-gray-100">
               {sorted.map((r, idx) => {
                 const isOpen = expanded.has(r.listing.id)
-                const pct = r.diffPercent
+                const pct = r.deviationFromExpected
                 const aState = approveState[r.listing.id] ?? "idle"
 
                 let suggested: number | null = null

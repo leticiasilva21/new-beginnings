@@ -7,11 +7,11 @@ interface Props {
 }
 
 export function SummaryCards({ results, threshold }: Props) {
-  const withData = results.filter((r) => r.diffPercent !== null)
-  const alerts   = withData.filter((r) => r.diffPercent! >  threshold)
-  const drops    = withData.filter((r) => r.diffPercent! < -threshold)
-  const stable   = withData.filter((r) => Math.abs(r.diffPercent!) <= threshold)
-  const noData   = results.filter((r) => r.diffPercent === null)
+  const withData = results.filter((r) => r.deviationFromExpected !== null)
+  const alerts   = withData.filter((r) => r.deviationFromExpected! >  threshold)
+  const drops    = withData.filter((r) => r.deviationFromExpected! < -threshold)
+  const stable   = withData.filter((r) => Math.abs(r.deviationFromExpected!) <= threshold)
+  const noData   = results.filter((r) => r.deviationFromExpected === null)
 
   const cards = [
     {

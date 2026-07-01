@@ -53,7 +53,7 @@ export function useAnalysis() {
             diffPercent = ((compareAvg - baseAvg) / baseAvg) * 100
           }
 
-          out.push({ listing, regionId, regionName, baseSeason, compareSeason, baseAvg, compareAvg, diffValue, diffPercent })
+          out.push({ listing, regionId, regionName, baseSeason, compareSeason, baseAvg, compareAvg, diffValue, diffPercent, deviationFromExpected: null, expectedMultiplierPct: null })
         } catch {
           out.push({
             listing,
@@ -65,6 +65,8 @@ export function useAnalysis() {
             compareAvg: null,
             diffValue: null,
             diffPercent: null,
+            deviationFromExpected: null,
+            expectedMultiplierPct: null,
           })
         }
 

@@ -34,4 +34,7 @@ export interface PriceJump {
   compareAvg: number | null
   diffValue: number | null
   diffPercent: number | null
+  // desvio em relação ao que o template esperava (diffPercent − (multiplierPct − 100))
+  deviationFromExpected: number | null
+  expectedMultiplierPct: number | null
 }

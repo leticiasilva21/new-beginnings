@@ -13,6 +13,7 @@ import { PriceComparisonTable }  from "./components/PriceComparisonTable"
 import { BulkPriceAdjustment }   from "./components/BulkPriceAdjustment"
 import { ErrorBoundary }         from "./components/ErrorBoundary"
 import { isoDate, cn }           from "./lib/utils"
+import { findTemplateSeasonForDate } from "./lib/analysis"
 
 type Tab = "analysis" | "listings" | "pricing"
 
@@ -54,6 +55,26 @@ export default function App() {
     if (targetListings.length === 0) return
     run(targetListings, baseDate, cmpDate)
   }, [selectedRegionId, baseDate, cmpDate, targetListings, loadingRegions, loadingListings]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Enrich results with deviationFromExpected based on each region's template
+  const enrichedResults = useMemo(() => {
+    return results.map((r) => {
+      if (r.diffPercent === null || r.baseAvg === null) {
+        return { ...r, deviationFromExpected: null, expectedMultiplierPct: null }
+      }
+      const template = getTemplate(r.regionId)
+      const tmplSeason = findTemplateSeasonForDate(template, cmpDate)
+      if (!tmplSeason) {
+        return { ...r, deviationFromExpected: r.diffPercent, expectedMultiplierPct: null }
+      }
+      const expectedDiff = tmplSeason.multiplierPct - 100
+      return {
+        ...r,
+        deviationFromExpected: r.diffPercent - expectedDiff,
+        expectedMultiplierPct: tmplSeason.multiplierPct,
+      }
+    })
+  }, [results, cmpDate, getTemplate])
 
   return (
     <div className="min-h-screen bg-[#F7F8FA]">
@@ -262,8 +283,8 @@ export default function App() {
 
             {results.length > 0 && (
               <>
-                <SummaryCards results={results} threshold={THRESHOLD} />
-                <ResultsTable results={results} threshold={THRESHOLD} cmpDate={cmpDate} getTemplate={getTemplate} />
+                <SummaryCards results={enrichedResults} threshold={THRESHOLD} />
+                <ResultsTable results={enrichedResults} threshold={THRESHOLD} cmpDate={cmpDate} getTemplate={getTemplate} />
               </>
             )}
 
