@@ -1,0 +1,4 @@
+name = "stays-proxy"
+main = "worker/index.js"
+compatibility_date = "2024-01-01"
+account_id = "d58fa1baa0eb585e91ffa0fc7b9e5d68"
