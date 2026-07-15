@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
-import { RefreshCw, Building2, BarChart2, Tag, AlertCircle } from "lucide-react"
+import { RefreshCw, Building2, BarChart2, Tag, AlertCircle, Search } from "lucide-react"
 import { useListings }           from "./hooks/useListings"
 import { useListingsWithRegion } from "./hooks/useListingsWithRegion"
 import { useAnalysis }           from "./hooks/useAnalysis"
@@ -12,10 +12,11 @@ import { TemplateEditor }        from "./components/TemplateEditor"
 import { PriceComparisonTable }  from "./components/PriceComparisonTable"
 import { BulkPriceAdjustment }   from "./components/BulkPriceAdjustment"
 import { ErrorBoundary }         from "./components/ErrorBoundary"
+import { ImoveisSearch }         from "./components/ImoveisSearch"
 import { isoDate, cn }           from "./lib/utils"
 import { findTemplateSeasonForDate } from "./lib/analysis"
 
-type Tab = "analysis" | "listings" | "pricing"
+type Tab = "analysis" | "listings" | "pricing" | "search"
 
 const today     = isoDate(new Date())
 const nextMonth = isoDate(new Date(Date.now() + 30 * 86_400_000))
@@ -25,9 +26,15 @@ const TABS = [
   { key: "analysis", label: "Análise de Saltos",  Icon: BarChart2  },
   { key: "pricing",  label: "Tabela de Preços",   Icon: Tag        },
   { key: "listings", label: "Imóveis por Região", Icon: Building2  },
+  { key: "search",   label: "Buscar Imóvel",      Icon: Search     },
 ] as const
 
-export default function App() {
+interface AppProps {
+  onSignOut?: () => void
+  userEmail?: string
+}
+
+export default function App({ onSignOut, userEmail }: AppProps) {
   const { listings, loading: loadingListings, error: listingsError, reload: reloadListings } = useListings()
   const { groups, loading: loadingRegions, progress: regionProgress, error: regionError, load: loadRegions } = useListingsWithRegion()
   const { run, results, loading: running, progress, error: analysisError } = useAnalysis()
@@ -122,6 +129,17 @@ export default function App() {
                 </button>
               )}
             </div>
+            {userEmail && onSignOut && (
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-400 hidden sm:block">{userEmail}</span>
+                <button
+                  onClick={onSignOut}
+                  className="text-xs text-gray-500 hover:text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Sair
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Tabs */}
@@ -229,6 +247,9 @@ export default function App() {
             onLoad={loadRegions}
           />
         )}
+
+        {/* ── SEARCH TAB ───────────────────────────────────── */}
+        {tab === "search" && <ImoveisSearch />}
 
         {/* ── ANALYSIS TAB ─────────────────────────────────── */}
         {tab === "analysis" && (
