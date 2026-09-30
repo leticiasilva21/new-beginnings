@@ -6,13 +6,20 @@ const headers = {
   "Content-Type": "application/json",
 }
 
+// A Stays request that never answers must not leave the screen loading forever
+const REQUEST_TIMEOUT = 20_000
+
 async function fetchWithRetry(url: string, opts: RequestInit = {}, retries = 3): Promise<Response> {
   for (let i = 0; i < retries; i++) {
-    const res = await fetch(url, opts)
-    if (res.ok || i === retries - 1) return res
+    try {
+      const res = await fetch(url, { ...opts, signal: AbortSignal.timeout(REQUEST_TIMEOUT) })
+      if (res.ok || i === retries - 1) return res
+    } catch (e) {
+      if (i === retries - 1) throw e
+    }
     await new Promise((r) => setTimeout(r, 1500 * (i + 1)))
   }
-  return fetch(url, opts)
+  throw new Error(`Request failed: ${url}`)
 }
 
 export async function fetchListings(): Promise<Listing[]> {

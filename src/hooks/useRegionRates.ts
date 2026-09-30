@@ -11,7 +11,10 @@ function ratesFor(listingId: string, year: number): Promise<Season[]> {
   const key = `${listingId}_${year}`
   let p = cache.get(key)
   if (!p) {
-    p = fetchRates(listingId, `${year - 1}-12-01`, `${year + 1}-03-31`).catch(() => [] as Season[])
+    p = fetchRates(listingId, `${year - 1}-12-01`, `${year + 1}-03-31`).catch(() => {
+      cache.delete(key) // don't keep a failure around — retry on the next visit
+      return [] as Season[]
+    })
     cache.set(key, p)
     setTimeout(() => cache.delete(key), TTL)
   }
