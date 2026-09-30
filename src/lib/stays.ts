@@ -100,3 +100,30 @@ export async function updateSeasonRate(
   }
   return res.ok
 }
+
+export interface StaysSeasonDetail {
+  _id: string
+  name: string
+  type: "season" | "event"
+  from: string
+  to: string
+  status: string
+  ratePlans: { minStay: number; _i_percent: number }[]
+  _idregion?: string
+}
+
+// Season names/types rarely change — cache per id for the session
+const seasonDetailCache = new Map<string, Promise<StaysSeasonDetail | null>>()
+
+export function fetchSeasonDetail(seasonId: string): Promise<StaysSeasonDetail | null> {
+  let p = seasonDetailCache.get(seasonId)
+  if (!p) {
+    p = fetchWithRetry(`${BASE_URL}/parr/seasons-sell/${seasonId}`, { headers })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => (d?._id ? (d as StaysSeasonDetail) : null))
+      .catch(() => null)
+    seasonDetailCache.set(seasonId, p)
+    p.then((d) => { if (!d) seasonDetailCache.delete(seasonId) })
+  }
+  return p
+}

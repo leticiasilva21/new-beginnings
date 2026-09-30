@@ -27,7 +27,7 @@ function saveAll(all: Record<string, RegionTemplate>) {
 }
 
 export function usePricingTemplates() {
-  const [, setRev] = useState(revision)
+  const [rev, setRev] = useState(revision)
 
   useEffect(() => {
     const notify = () => setRev(revision)
@@ -54,5 +54,5 @@ export function usePricingTemplates() {
     notifyAll()
   }, [])
 
-  return { getTemplate, saveTemplate, resetTemplate }
+  return { getTemplate, saveTemplate, resetTemplate, revision: rev }
 }

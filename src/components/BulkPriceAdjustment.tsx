@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { RefreshCw, Check, AlertTriangle, TrendingUp, TrendingDown, Copy } from "lucide-react"
 import { cn } from "../lib/utils"
-import type { Listing, Season } from "../types"
+import type { Listing } from "../types"
 import type { RegionTemplate } from "../types/template"
-import { fetchRates, updateSeasonRate } from "../lib/stays"
+import { updateSeasonRate } from "../lib/stays"
+import { useRegionRates } from "../hooks/useRegionRates"
 import { findBestMatchingSeason, effectiveRate, computeNewBaseRateValue } from "../lib/analysis"
 
 interface Props {
@@ -15,32 +16,13 @@ interface Props {
 type ApplyState = "idle" | "loading" | "done" | "error" | "clone"
 
 export function BulkPriceAdjustment({ listings, template, year }: Props) {
-  const [ratesMap, setRatesMap] = useState<Record<string, Season[]>>({})
-  const [fetching, setFetching] = useState(false)
   const [selectedSeasonIds, setSelectedSeasonIds] = useState<Set<string>>(new Set())
   const [direction, setDirection] = useState<"up" | "down">("up")
   const [pct, setPct] = useState<number>(5)
   const [cellState, setCellState] = useState<Record<string, ApplyState>>({})
   const [applying, setApplying] = useState(false)
 
-  useEffect(() => {
-    if (listings.length === 0) return
-    setFetching(true)
-    const from = `${year - 1}-12-01`
-    const to = `${year + 1}-03-31`
-    Promise.all(
-      listings.map((l) =>
-        fetchRates(l.id, from, to)
-          .then((s) => ({ id: l.id, seasons: s ?? [] }))
-          .catch(() => ({ id: l.id, seasons: [] as Season[] }))
-      )
-    ).then((results) => {
-      const map: Record<string, Season[]> = {}
-      for (const r of results) map[r.id] = r.seasons
-      setRatesMap(map)
-      setFetching(false)
-    }).catch(() => setFetching(false))
-  }, [listings, year])
+  const { ratesMap, fetching } = useRegionRates(listings, year)
 
   function toggleSeason(id: string) {
     setSelectedSeasonIds((prev) => {

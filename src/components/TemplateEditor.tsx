@@ -44,7 +44,7 @@ function MDInput({ value, onChange }: { value: string; onChange: (v: string) => 
 }
 
 export function TemplateEditor({ regionId, regionName, allRegions = [] }: Props) {
-  const { getTemplate, saveTemplate, resetTemplate } = usePricingTemplates()
+  const { getTemplate, saveTemplate, resetTemplate, revision } = usePricingTemplates()
   const [seasons, setSeasons] = useState<TemplateSeason[]>([])
   const [dirty, setDirty] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -95,6 +95,12 @@ export function TemplateEditor({ regionId, regionName, allRegions = [] }: Props)
     setSeasons(t.seasons.map((s) => ({ ...s })))
     setDirty(false)
   }, [regionId, getTemplate])
+
+  // Pick up seasons saved elsewhere (e.g. events added from Stays) without discarding unsaved edits
+  useEffect(() => {
+    if (dirty) return
+    setSeasons(getTemplate(regionId).seasons.map((s) => ({ ...s })))
+  }, [revision]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function update(id: string, field: keyof TemplateSeason, value: any) {
     setSeasons((prev) => prev.map((s) => s.id === id ? { ...s, [field]: value } : s))

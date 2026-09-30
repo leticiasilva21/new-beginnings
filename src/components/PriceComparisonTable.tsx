@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Check, RefreshCw, Copy } from "lucide-react"
-import type { Listing, Season } from "../types"
+import type { Listing } from "../types"
 import type { RegionTemplate } from "../types/template"
-import { fetchRates, updateSeasonRate } from "../lib/stays"
+import { updateSeasonRate } from "../lib/stays"
+import { useRegionRates } from "../hooks/useRegionRates"
 import { findBestMatchingSeason, effectiveRate, computeNewBaseRateValue } from "../lib/analysis"
 import { cn } from "../lib/utils"
 
@@ -16,28 +17,9 @@ interface Props {
 type CellState = "idle" | "loading" | "done" | "error"
 
 export function PriceComparisonTable({ listings, template, year }: Props) {
-  const [ratesMap, setRatesMap] = useState<Record<string, Season[]>>({})
-  const [fetching, setFetching] = useState(false)
   const [cellState, setCellState] = useState<Record<string, CellState>>({})
 
-  useEffect(() => {
-    if (listings.length === 0) return
-    setFetching(true)
-    const from = `${year - 1}-12-01`
-    const to = `${year + 1}-03-31`
-    Promise.all(
-      listings.map((l) =>
-        fetchRates(l.id, from, to)
-          .then((seasons) => ({ id: l.id, seasons: seasons ?? [] }))
-          .catch(() => ({ id: l.id, seasons: [] as Season[] }))
-      )
-    ).then((results) => {
-      const map: Record<string, Season[]> = {}
-      for (const r of results) map[r.id] = r.seasons
-      setRatesMap(map)
-      setFetching(false)
-    }).catch(() => setFetching(false))
-  }, [listings, year])
+  const { ratesMap, fetching } = useRegionRates(listings, year)
 
   const baseTmpl = template.seasons.find((s) => s.isBase)
 

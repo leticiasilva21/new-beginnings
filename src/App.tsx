@@ -11,6 +11,7 @@ import { ListingsView }          from "./components/ListingsView"
 import { TemplateEditor }        from "./components/TemplateEditor"
 import { PriceComparisonTable }  from "./components/PriceComparisonTable"
 import { BulkPriceAdjustment }   from "./components/BulkPriceAdjustment"
+import { UnmappedEventsPanel }   from "./components/UnmappedEventsPanel"
 import { ErrorBoundary }         from "./components/ErrorBoundary"
 import { isoDate, cn }           from "./lib/utils"
 import { findTemplateSeasonForDate } from "./lib/analysis"
@@ -193,6 +194,12 @@ export default function App() {
                       regionId={pricingRegionId}
                       regionName={pricingGroup?.regionName ?? pricingRegionId}
                       allRegions={groups.map((g) => ({ regionId: g.regionId, regionName: g.regionName }))}
+                    />
+                    <UnmappedEventsPanel
+                      regionId={pricingRegionId}
+                      listings={pricingListings}
+                      template={template}
+                      year={pricingYear}
                     />
                     <BulkPriceAdjustment
                       listings={pricingListings}
