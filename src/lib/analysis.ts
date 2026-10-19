@@ -1,9 +1,18 @@
 import type { Season } from "../types"
 import type { RegionTemplate, TemplateSeason } from "../types/template"
 
+// Stays season dates are inclusive on both ends (an event "11-13 → 11-15"
+// includes the 15th). Returns the day after `to`, so it can be used as an
+// exclusive end in [from, end) comparisons.
+export function staysEndExclusive(to: string): string {
+  const d = new Date(to)
+  d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().substring(0, 10)
+}
+
 /**
  * Finds the season that contains the reference date.
- * Stays seasons use [from, to) — the `from` date is inclusive, `to` is exclusive.
+ * Stays seasons are [from, to] — both dates inclusive.
  * When multiple seasons overlap (e.g. Réveillon inside Baixa T2), the most
  * specific (shortest duration) wins — so holiday seasons take priority.
  */
@@ -17,10 +26,10 @@ export function getDominantSeason(
   const refDay = new Date(from).getTime()
   const active = seasons.filter((s) => s.status === "active")
 
-  // Find all seasons whose [from, to) window contains the reference day
+  // Find all seasons whose [from, to] window contains the reference day
   const matches = active.filter((s) => {
     const sStart = new Date(s.from).getTime()
-    const sEnd   = new Date(s.to).getTime()
+    const sEnd   = new Date(staysEndExclusive(s.to)).getTime()
     return sStart <= refDay && sEnd > refDay
   })
 
@@ -73,9 +82,10 @@ export function findBestMatchingSeason(seasons: Season[], tmpl: TemplateSeason, 
   let bestScore = 0
   let bestDuration = Infinity
   for (const s of seasons.filter((s) => s.status === "active")) {
-    const ov = dateOverlap(s.from, s.to, tFrom, tTo)
+    const sEnd = staysEndExclusive(s.to)
+    const ov = dateOverlap(s.from, sEnd, tFrom, tTo)
     if (ov === 0) continue
-    const dur = (new Date(s.to).getTime() - new Date(s.from).getTime()) / 86_400_000
+    const dur = (new Date(sEnd).getTime() - new Date(s.from).getTime()) / 86_400_000
     const score = ov / Math.sqrt(dur * tDur)
     if (score > bestScore || (score === bestScore && dur < bestDuration)) {
       bestScore = score; bestDuration = dur; best = s

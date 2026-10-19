@@ -3,7 +3,7 @@ import { RefreshCw, Plus, Check, CalendarPlus } from "lucide-react"
 import type { Listing } from "../types"
 import type { RegionTemplate, TemplateSeason } from "../types/template"
 import { fetchSeasonDetail, type StaysSeasonDetail } from "../lib/stays"
-import { findBestMatchingSeason, effectiveRate } from "../lib/analysis"
+import { findBestMatchingSeason, effectiveRate, staysEndExclusive } from "../lib/analysis"
 import { findUnmappedEvents } from "../lib/eventMapping"
 import { useRegionRates } from "../hooks/useRegionRates"
 import { usePricingTemplates } from "../hooks/usePricingTemplates"
@@ -87,7 +87,7 @@ export function UnmappedEventsPanel({ regionId, listings, template, year }: Prop
       id: `stays-${e.staysSeasonId}`,
       name: e.name,
       startMD: e.from.substring(5),
-      endMD: e.to.substring(5),
+      endMD: staysEndExclusive(e.to).substring(5),  // template end is exclusive
       minNights: e.minNights,
       multiplierPct: jumpFor(e.key, e.currentJumpPct),
       isBase: false,

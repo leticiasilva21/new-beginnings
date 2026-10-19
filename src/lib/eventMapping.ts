@@ -1,7 +1,7 @@
 import type { Season } from "../types"
 import type { RegionTemplate, TemplateSeason } from "../types/template"
 import type { StaysSeasonDetail } from "./stays"
-import { dateOverlap, effectiveRate } from "./analysis"
+import { dateOverlap, effectiveRate, staysEndExclusive } from "./analysis"
 
 // Lowercase, no accents, no "1/10" prefix, no parentheses, no years
 export function normalizeName(name: string): string {
@@ -59,8 +59,9 @@ function templateWindow(tmpl: TemplateSeason, year: number): [string, string] | 
 }
 
 // Same period as a non-base template season (e.g. an event added earlier under another name)
-function datesMatch(tmpl: TemplateSeason, from: string, to: string): boolean {
+function datesMatch(tmpl: TemplateSeason, from: string, toInclusive: string): boolean {
   if (tmpl.isBase) return false
+  const to = staysEndExclusive(toInclusive)
   const eDur = Math.max(1, (new Date(to).getTime() - new Date(from).getTime()) / 86_400_000)
   const year = parseInt(from.substring(0, 4))
   for (const y of [year - 1, year]) {
